@@ -108,7 +108,6 @@ void half_mesh::update_mesh_z(F fn){
 // generate the half edge mesh
 template<typename F>
 void half_mesh::build_mesh(uint64_t mx, uint64_t my, F fn){
-    // fn must be (index_t) -> float[3]
     uint64_t num_of_verts = mx * my;
 
     std::map<std::pair<index_t, index_t>, index_t> edge_face_map;
@@ -153,16 +152,16 @@ void half_mesh::build_mesh(uint64_t mx, uint64_t my, F fn){
 
     // create the half_edges
     this->half_vector.clear();
-
+    index_t hei = 0;            // half_edge index
     for(index_t i = 0; i < (index_t)edges.size(); ++i){
 
         const edge &e = edges[i];
 
-        index_t index_e = this->half_vector.size();
+        index_t index_e = hei++;
         this->half_vector.push_back(half_edge());
         half_edge half_e;
 
-        index_t index_p = this->half_vector.size();
+        index_t index_p = hei++;
         this->half_vector.push_back(half_edge());
         half_edge half_p;
 
@@ -316,7 +315,8 @@ void half_mesh::build_mesh(uint64_t mx, uint64_t my, F fn){
         std::cout << "vertexes:" << std::endl;
         std::size_t i = 0;
         for(auto &h : this->vertexes){
-            std::cout << "["
+            std::cout << i
+                      << " ["
                       << std::get<0>(h)
                       << ", "
                       << std::get<1>(h)

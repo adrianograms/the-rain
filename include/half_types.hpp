@@ -1,22 +1,13 @@
 #ifndef HALF_TYPES_H
 #define HALF_TYPES_H
-// TODO: swap this
-#include <tuple>
 
 #include <cstdint>
 
-// index type
+// index type, into the half_vector
 typedef int64_t index_t;
 
 class triangle{
 public:
-    // TODO: swap this
-    // :) god is dead
-    std::tuple<
-    std::tuple<float, float, float>,
-    std::tuple<float, float, float>,
-    std::tuple<float, float, float>> points;
-
     // index into the half edge vector
     index_t v[3];
 
@@ -37,8 +28,6 @@ public:
         this->v[0] = rhs.v[0];
         this->v[1] = rhs.v[1];
         this->v[2] = rhs.v[2];
-        // remove
-        this->points = rhs.points;
 
         return *this;
     }
@@ -46,13 +35,6 @@ public:
 
 class edge{
 public:
-    // TODO: swap
-    // weeeeeeeeeeee
-    std::tuple<
-    std::tuple<float, float, float>,
-    std::tuple<float, float, float>,
-    std::tuple<float, float, float>> points;
-
     // index into the half edge vector
     index_t e[2];
 
@@ -71,8 +53,6 @@ public:
         }
         this->e[0] = rhs.e[0];
         this->e[1] = rhs.e[1];
-        // TODO: remove
-        this->points = rhs.points;
 
         return *this;
     }
