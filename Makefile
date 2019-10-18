@@ -9,7 +9,7 @@ all: main.cpp $(OBJECTS)
 
 $(OBJECTS): include/noise.hpp include/half_edge.hpp include/half_mesh.hpp include/half_types.hpp
 
-.PHONY: clean
+.PHONY: clean 
 
 clean:
 	rm -f *.o

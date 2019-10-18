@@ -10,6 +10,8 @@
 #define WINDOW_Y 768
 #define WINDOW_X 1337
 
+//teste
+
 sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), "make some moise");
 
 sf::Image   buffer;
