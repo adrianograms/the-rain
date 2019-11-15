@@ -30,6 +30,7 @@ public:
         this->v[2] = rhs.v[2];
 
         return *this;
+
     }
 };
 
