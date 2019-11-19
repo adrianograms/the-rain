@@ -6,21 +6,32 @@
 #include "include/noise.hpp"
 #include "include/half_mesh.hpp"
 
-#define K_SIZE 7
 #define WINDOW_Y 768
 #define WINDOW_X 1337
 
-//teste 1
+// TODO list:
+// menus
+// save to file
+// load from file
+// camera
+// pipeline
 
-sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), "make some moise");
+bool button_pressed(sf::FloatRect sprite, sf::Vector2f mouse){
+    if (sprite.contains(mouse)){
+        return true;
+    }
+    return false;
+}
 
-sf::Image   buffer;
-sf::Texture texture;
-sf::Sprite  sprite;
+sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
 int main(){
-
-    buffer.create(WINDOW_X, WINDOW_Y);
+    sf::Texture bs_texture;
+    if(!bs_texture.loadFromFile("assets/bs.png")){
+        return 0;
+    }
+    sf::Sprite  bs_sprite(bs_texture);
+    bs_sprite.setPosition(300, 300);
 
     half_mesh terrain_mesh;
 
@@ -31,20 +42,12 @@ int main(){
 
     make_some_noise.gen(time(NULL));
 
-    terrain_mesh.build_mesh(mx, my, [&make_some_noise, &mx](index_t index) -> std::tuple<float, float, float> {
+    terrain_mesh.build_mesh(mx, my, [&make_some_noise, &mx](index_t index) -> point {
             uint64_t i = index / mx;
             uint64_t j = index % mx;
 
-            return std::make_tuple((float)i, (float)j, (float)make_some_noise[i][j]);
+            return point((float)i, (float)j, (float)make_some_noise[i][j]);
     });
-
-
-
-    // allocate noise_map matrix
-    uint8_t **noise_map = new uint8_t*[WINDOW_Y];
-    for(std::size_t i = 0; i < WINDOW_Y; i++){
-        noise_map[i] = new uint8_t[WINDOW_X];
-    }
 
     while(win.isOpen()){
 
@@ -55,17 +58,67 @@ int main(){
             case sf::Event::Closed:
                 win.close();
                 break;
+            case sf::Event::KeyPressed:
+                switch(ev.key.code){
+                case sf::Keyboard::A:
+                    // pan esquerda
+                    break;
+                case sf::Keyboard::S:
+                    // pan direita
+                    break;
+                case sf::Keyboard::Q:
+                    // pan cima
+                    break;
+                case sf::Keyboard::W:
+                    // pan baixo
+                    break;
+                case sf::Keyboard::Z:
+                    // aumenta o fov
+                    break;
+                case sf::Keyboard::X:
+                    // diminui o fov
+                    break;
+                case sf::Keyboard::D:
+                    // ponto focal esquerda
+                    break;
+                case sf::Keyboard::F:
+                    // ponto focal direita
+                    break;
+                case sf::Keyboard::E:
+                    // ponto focal para baixo
+                    break;
+                case sf::Keyboard::R:
+                    // ponto focal para cima
+                    break;
+                case sf::Keyboard::G:
+                    // camera para a esquerda
+                    break;
+                case sf::Keyboard::H:
+                    // camera para a direita
+                    break;
+                case sf::Keyboard::T:
+                    // camera para baixo
+                    break;
+                case sf::Keyboard::Y:
+                    // camera para cima
+                    break;
+                default:
+                    break;
+                }
+                break;
             case sf::Event::MouseButtonPressed:
-                std::cout << "smoothing" << std::endl;
-                make_some_noise.smooth();
+                switch(ev.mouseButton.button){
+                case sf::Mouse::Left:
+                    if(button_pressed(bs_sprite.getGlobalBounds(), {(float)ev.mouseButton.x, (float)ev.mouseButton.y})){
+                        std::cout << ":(" << std::endl;
+                    }
+                    break;
+                default:
+                    break;
+                }
+
+                break;
             default:
-// #pragma omp parallel for schedule(dynamic, 1) collapse(2)
-                // for(std::size_t i = 0; i < WINDOW_Y; i++){
-                //     for(std::size_t j = 0; j < WINDOW_X; j++){
-                //         uint8_t rgb = make_some_noise.at(j, i);
-                //         buffer.setPixel(j, i, sf::Color(rgb, rgb, 0));
-                //     }
-                // }
                 for(index_t i : terrain_mesh.edge_vector){
                     sf::VertexArray lines(sf::Lines, 2);
                     std::pair<index_t, index_t> dir = terrain_mesh.half_direction(i);
@@ -74,11 +127,11 @@ int main(){
                     auto end = terrain_mesh.points[dir.second];
 
                     // just for testing
-                    lines[0].position.x = (std::get<0>(srt) + 10) * 10;
-                    lines[0].position.y = (std::get<1>(srt) + 10) * 10;
+                    lines[0].position.x = (srt.x() + 10) * 10;
+                    lines[0].position.y = (srt.y() + 10) * 10;
                     lines[0].color = sf::Color::Green;
-                    lines[1].position.x = (std::get<0>(end) + 10) * 10;
-                    lines[1].position.y = (std::get<1>(end) + 10) * 10;
+                    lines[1].position.x = (end.x() + 10) * 10;
+                    lines[1].position.y = (end.y() + 10) * 10;
                     lines[1].color = sf::Color::Blue;
 
                     win.draw(lines);
@@ -88,13 +141,9 @@ int main(){
                 break;
             }
         }
+        win.draw(bs_sprite);
         win.display();
     }
-
-    for(std::size_t i = 0; i < WINDOW_Y; i++){
-        delete[] noise_map[i];
-    }
-    delete[] noise_map;
 
     return 0;
 }

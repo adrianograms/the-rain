@@ -15,10 +15,9 @@
 // based on trimesh from https://github.com/yig/halfedge
 
 class half_mesh{
-private:
 
-    void _gen_objects(std::vector<triangle> &, std::vector<edge> &, uint64_t, uint64_t);
-
+    void _gen_objects(std::vector<half::triangle> &, std::vector<half::edge> &, uint64_t, uint64_t);
+    void _update_normal();
 public:
     // basic extructure of each face
     //                              <---- half edge from 3 to 1
@@ -48,22 +47,19 @@ public:
     // |/        |
     // 3---------4
 
-    // this vector contains all the half edges
+
     std::vector<half_edge> half_vector;
 
-    // index into the half_vector for a given edge
     std::vector<index_t> vertex_vector;
 
-    // index into the half_vector for a face
-    // each face will index into a half vector of the face
     std::vector<index_t> face_vector;
 
-    // index into the half_vetor for a given edge
     std::vector<index_t> edge_vector;
 
     std::map<std::pair<index_t, index_t>, index_t> edge_index_map;
 
-    std::vector<std::tuple<float, float ,float>> points;
+    std::vector<point> points;
+    std::vector<point> normals;
 
     half_mesh();
 
@@ -71,9 +67,9 @@ public:
 
 
     // the value of x:y must be a single number following x + y * mx;
-    void build_mesh(uint64_t, uint64_t, std::function<std::tuple<float, float, float>(index_t)>);
+    void build_mesh(uint64_t, uint64_t, std::function<point(index_t)>);
 
-    void update_mesh_z(std::function<std::tuple<float, float, float>(index_t)>);
+    void update_mesh_z(std::function<point(index_t)>);
 
     // get the half_edge of the index
     const half_edge &half_at(index_t) const;

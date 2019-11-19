@@ -5,12 +5,10 @@
 
 // ---------- private ----------
 
-
-
 // this generates the mesh triangles
 // mx = terrain size on the x axis
 // my = terrain size on the y axix
-void half_mesh::_gen_objects(std::vector<triangle> &triangles, std::vector<edge> &edges,
+void half_mesh::_gen_objects(std::vector<half::triangle> &triangles, std::vector<half::edge> &edges,
                             uint64_t mx, uint64_t my){
 
     std::set<std::pair<index_t, index_t>> edge_set;
@@ -45,14 +43,12 @@ void half_mesh::_gen_objects(std::vector<triangle> &triangles, std::vector<edge>
         edges.emplace_back(edge.first, edge.second);
     }
 }
-
 // ---------- public ----------
 
 half_mesh::half_mesh() { }
 
-
 // update the z component of each ponit that indexes to a half edge
-void half_mesh::update_mesh_z(std::function<std::tuple<float, float, float>(index_t)> fn){
+void half_mesh::update_mesh_z(std::function<point(index_t)> fn){
     points.clear();
 
     for(uint64_t i = 0; i < vertex_vector.size(); i++){
@@ -61,12 +57,13 @@ void half_mesh::update_mesh_z(std::function<std::tuple<float, float, float>(inde
 }
 
 // generate the half edge mesh
-void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<std::tuple<float, float, float>(index_t)> fn){
+void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<point(index_t)> fn){
     uint64_t num_of_verts = mx * my;
 
-    std::map<std::pair<index_t, index_t>, index_t> edge_face_map;
-    std::vector<triangle> triangles;
-    std::vector<edge> edges;
+    std::map<std::pair<index_t, index_t>, index_t> edge_face_map; // index an edge to its face
+
+    std::vector<half::triangle> triangles;
+    std::vector<half::edge> edges;
 
     // given a direction return a face
     auto direction_face = [&edge_face_map](std::pair<index_t, index_t> key) -> index_t {
@@ -75,33 +72,34 @@ void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<std::tuple<fl
 
     _gen_objects(triangles, edges, mx, my);
 
-    // create the face map
-    for(index_t i = 0; i < (index_t)triangles.size(); i++){
-        const triangle &tri = triangles[i];
+    {
+        index_t i = 0;
+        for(auto &t : triangles){
+            // map all the edges of a triangle to its index to create the face map
+            edge_face_map[std::make_pair(t.v[0], t.v[1])] = i;
+            edge_face_map[std::make_pair(t.v[1], t.v[2])] = i;
+            edge_face_map[std::make_pair(t.v[2], t.v[0])] = i;
 
-        edge_face_map[std::make_pair(tri.v[0], tri.v[1])] = i;
-        edge_face_map[std::make_pair(tri.v[1], tri.v[2])] = i;
-        edge_face_map[std::make_pair(tri.v[2], tri.v[0])] = i;
+            i++;
+        }
     }
 
-    this->clear_mesh();
-    this->vertex_vector.resize(num_of_verts,   -1);
-    this->face_vector.resize(triangles.size(), -1);
-    this->edge_vector.resize(edges.size(),     -1);
+    clear_mesh();
+    vertex_vector.resize(num_of_verts,   -1);
+    face_vector.resize(triangles.size(), -1);
+    edge_vector.resize(edges.size(),     -1);
 
     // create the half_edges
-    this->half_vector.clear();
-    index_t hei = 0;            // half_edge index
-    for(index_t i = 0; i < (index_t)edges.size(); ++i){
+    for(index_t hei = 0, i = 0; i < (index_t)edges.size(); ++i){
 
-        const edge &e = edges[i];
+        const half::edge &e = edges[i];
 
         index_t index_e = hei++;
-        this->half_vector.push_back(half_edge());
+        half_vector.push_back(half_edge());
         half_edge half_e;
 
         index_t index_p = hei++;
-        this->half_vector.push_back(half_edge());
+        half_vector.push_back(half_edge());
         half_edge half_p;
 
         std::pair<index_t, index_t> dir_one = std::make_pair(e.e[0], e.e[1]);
@@ -118,46 +116,38 @@ void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<std::tuple<fl
         half_p.pair = index_e;
 
         // store the direction in the index to dir map
-        assert(this->edge_index_map.find(dir_one) == this->edge_index_map.end());
-        assert(this->edge_index_map.find(dir_two) == this->edge_index_map.end());
-        this->edge_index_map[dir_one] = index_e;
-        this->edge_index_map[dir_two] = index_p;
+        edge_index_map[dir_one] = index_e;
+        edge_index_map[dir_two] = index_p;
 
-        if(this->vertex_vector[half_e.vertex] == -1 || half_p.face == -1){
-            assert(half_e.pair != -1);
-            this->vertex_vector[half_e.vertex] = half_e.pair;
+        if(vertex_vector[half_e.vertex] == -1 || half_p.face == -1){
+            vertex_vector[half_e.vertex] = half_e.pair;
         }
-        if(this->vertex_vector[half_p.vertex] == -1 || half_e.face == -1){
-            assert(half_p.pair != -1);
-            this->vertex_vector[half_p.vertex] = half_p.pair;
+        if(vertex_vector[half_p.vertex] == -1 || half_e.face == -1){
+            vertex_vector[half_p.vertex] = half_p.pair;
         }
         // if the face is not yet stored, store it
-        if(half_e.face != -1 && this->face_vector[half_e.face] == -1){
-            this->face_vector[half_e.face] = index_e;
+        if(half_e.face != -1 && face_vector[half_e.face] == -1){
+            face_vector[half_e.face] = index_e;
         }
-        if(half_p.face != -1 && this->face_vector[half_p.face] == -1){
-            this->face_vector[half_p.face] = index_p;
+        if(half_p.face != -1 && face_vector[half_p.face] == -1){
+            face_vector[half_p.face] = index_p;
         }
 
-        assert(half_p.vertex != -1);
-        assert(half_e.vertex != -1);
-        assert(this->edge_vector[i] == -1);
-
-        this->edge_vector[i] = index_e;
-        this->half_vector[index_e] = half_e;
-        this->half_vector[index_p] = half_p;
+        edge_vector[i] = index_e;
+        half_vector[index_e] = half_e;
+        half_vector[index_p] = half_p;
     }
     // store half_edges with no faces
     std::vector<index_t> bound_half;
-    for(index_t i = 0; i < (index_t)this->half_vector.size(); i++){
-        half_edge &hedge = this->half_vector[i];
+    for(index_t i = 0; i < (index_t)half_vector.size(); i++){
+        half_edge &hedge = half_vector[i];
 
         if(hedge.face == -1){
             bound_half.push_back(i);
             continue;
         }
 
-        const triangle &face = triangles[hedge.face];
+        const half::triangle &face = triangles[hedge.face];
         const index_t curr = hedge.vertex;
 
         index_t next = -1;
@@ -172,17 +162,17 @@ void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<std::tuple<fl
         }
         assert(next != -1);
 
-        hedge.next = this->edge_index_map[std::make_pair(curr, next)];
+        hedge.next = edge_index_map[{curr, next}];
     }
 
     std::map<index_t, std::set<index_t>> vertex_to_bound;
     for(auto &bound : bound_half){
-        index_t start = this->half_vector[this->half_vector[bound].pair].vertex;
+        index_t start = half_vector[half_vector[bound].pair].vertex;
         vertex_to_bound[start].insert(bound);
     }
 
     for(auto &bound : bound_half){
-        half_edge &hedge = this->half_vector[bound];
+        half_edge &hedge = half_vector[bound];
 
         std::set<index_t> &out = vertex_to_bound[hedge.vertex];
         if(!out.empty()){
@@ -193,86 +183,11 @@ void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<std::tuple<fl
             out.erase(out_half);
         }
     }
-#ifdef DEBUG
-    // print all the shit
-    {
-        std::cout << "triangles:" << std::endl;
-        std::size_t i = 0;
-        for(auto &t : triangles){
-            std::cout << i << " ["  << t.v[0] << ", " << t.v[1] << ", " << t.v[2] << "]" << std::endl;
-            i++;
-        }
-        std::cout << std::endl;
-    }{
-        std::cout << "edges:" << std::endl;
-        std::size_t i = 0;
-        for(auto &e : edges){
-            std::cout << i << " ["  << e.e[0] << ", " << e.e[1] << "]" << std::endl;
-            i++;
-        }
-        std::cout << std::endl;
-    }{
-        std::cout << "vertexes:" << std::endl;
-        std::size_t i = 0;
-        for(auto &v : this->vertex_vector){
-            std::cout << i << " [" << v << "]" << std::endl;
-            i++;
-        }
-        std::cout << std::endl;
-    }{
-        std::cout << "faces:" << std::endl;
-        std::size_t i = 0;
-        for(auto &f : this->face_vector){
-            std::cout << i << " [" << f << "]" << std::endl;
-            i++;
-        }
-        std::cout << std::endl;
-    }{
-        std::cout << "edges:" << std::endl;
-        std::size_t i = 0;
-        for(auto &e : this->edge_vector){
-            std::cout << i << " [" << e << "]" << std::endl;
-            i++;
-        }
-        std::cout << std::endl;
-    }{
-        std::cout << "half_edges:" << std::endl;
-        std::size_t i = 0;
-        for(auto &h : this->half_vector){
-            std::cout << i
-                      << " [vertex: " << h.vertex
-                      << ", pair: " << h.pair
-                      << ", face: " << h.face
-                      << ", next: " << h.next << "]" << std::endl;
-            i++;
-        }
-        std::cout << std::endl;
-    }
 
-#endif
-    this->update_mesh_z(fn);
-#ifdef DEBUG
-    {
-        std::cout << "vertexes:" << std::endl;
-        std::size_t i = 0;
-        for(auto &h : points){
-            std::cout << i
-                      << " ["
-                      << std::get<0>(h)
-                      << ", "
-                      << std::get<1>(h)
-                      << ", "
-                      << std::get<2>(h)
-                      << "]"
-                      << std::endl;
-            i++;
-        }
-        std::cout << std::endl;
-    }
-#endif
+    update_mesh_z(fn);
 }
 
-// clear all the stuff, it is better to just make a new mesh
+// reset the mesh
 void half_mesh::clear_mesh(){
     this->half_vector.clear();
     this->vertex_vector.clear();
