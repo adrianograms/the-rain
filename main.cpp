@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "include/button.hpp"
 #include "include/noise.hpp"
 #include "include/half_mesh.hpp"
 
@@ -16,37 +17,46 @@
 // camera
 // pipeline
 
-bool button_pressed(sf::FloatRect sprite, sf::Vector2f mouse){
-    if (sprite.contains(mouse)){
-        return true;
-    }
-    return false;
-}
-
 sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
+std::vector<button> menu;
+
 int main(){
-    sf::Texture bs_texture;
-    if(!bs_texture.loadFromFile("assets/bs.png")){
-        return 0;
-    }
-    sf::Sprite  bs_sprite(bs_texture);
-    bs_sprite.setPosition(300, 300);
+    button save("assets/save_button.png", {30, 60}, [](){
+        std::cout << "save pressed" << std::endl;
+    });
+
+    button load("assets/load_button.png", {60, 60}, [](){
+        std::cout << "load pressed" << std::endl;
+    });
+
+    button texture("assets/texture_button.png", {90, 90}, [](){
+        std::cout << "texture pressed" << std::endl;
+    });
+
+    button gen("assets/gen_button.png", {120, 120}, []{
+        std::cout << "gen pressed" << std::endl;
+    });
+
+    button smoth("assets/smoth_button.png", {150, 150}, []{
+        std::cout << "smoth pressed" << std::endl;
+    });
+
 
     half_mesh terrain_mesh;
 
     uint64_t mx = 60;
     uint64_t my = 70;
 
-    noise make_some_noise(WINDOW_X, WINDOW_Y);
+    noise height(WINDOW_X, WINDOW_Y);
 
-    make_some_noise.gen(time(NULL));
+    height.gen(time(NULL));
 
-    terrain_mesh.build_mesh(mx, my, [&make_some_noise, &mx](index_t index) -> point {
+    terrain_mesh.build_mesh(mx, my, [&height, &mx](index_t index) -> point {
             uint64_t i = index / mx;
             uint64_t j = index % mx;
 
-            return point((float)i, (float)j, (float)make_some_noise[i][j]);
+            return point((float)i, (float)j, (float)height[i][j]);
     });
 
     while(win.isOpen()){
@@ -109,9 +119,7 @@ int main(){
             case sf::Event::MouseButtonPressed:
                 switch(ev.mouseButton.button){
                 case sf::Mouse::Left:
-                    if(button_pressed(bs_sprite.getGlobalBounds(), {(float)ev.mouseButton.x, (float)ev.mouseButton.y})){
-                        std::cout << ":(" << std::endl;
-                    }
+                    save.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
                     break;
                 default:
                     break;
@@ -141,7 +149,7 @@ int main(){
                 break;
             }
         }
-        win.draw(bs_sprite);
+        win.draw(save);
         win.display();
     }
 
