@@ -1,24 +1,20 @@
 #ifndef HALF_EDGE_H
 #define HALF_EDGE_H
-// TODO: swap this for the sf::Vertex
-#include <tuple>
 
 #include "half_types.hpp"
 
 class half_edge{
     // all public for now
 public:
-    // coordenate of the vertex at the start of the half_edge
-    std::tuple<float, float, float> xyz;
-
+    // index into the half_vector
     index_t next;
-
+    // index into the half_vector
     index_t pair;
-
+    // index into the edge_vector
     index_t edge;
-
+    // index into the face_vector
     index_t face;
-
+    // index int the vertex_vector
     index_t vertex;
 
     half_edge();

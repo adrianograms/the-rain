@@ -11,13 +11,15 @@
 
 #include "half_types.hpp"
 #include "half_edge.hpp"
+#include "vec3f.hpp"
 
 // based on trimesh from https://github.com/yig/halfedge
 
 class half_mesh{
 
     void _gen_objects(std::vector<half::triangle> &, std::vector<half::edge> &, uint64_t, uint64_t);
-    void _update_normal();
+    void _update_normals();
+
 public:
     // basic extructure of each face
     //                              <---- half edge from 3 to 1
@@ -51,15 +53,13 @@ public:
     std::vector<half_edge> half_vector;
 
     std::vector<index_t> vertex_vector;
-
     std::vector<index_t> face_vector;
-
     std::vector<index_t> edge_vector;
 
     std::map<std::pair<index_t, index_t>, index_t> edge_index_map;
 
-    std::vector<point> points;
-    std::vector<point> normals;
+    std::vector<vec3f> points;
+    std::vector<vec3f> normals;
 
     half_mesh();
 
@@ -67,9 +67,9 @@ public:
 
 
     // the value of x:y must be a single number following x + y * mx;
-    void build_mesh(uint64_t, uint64_t, std::function<point(index_t)>);
+    void build_mesh(uint64_t, uint64_t, std::function<vec3f(index_t)>);
 
-    void update_mesh_z(std::function<point(index_t)>);
+    void update_mesh_z(std::function<vec3f(index_t)>);
 
     // get the half_edge of the index
     const half_edge &half_at(index_t) const;
@@ -87,6 +87,8 @@ public:
 
     std::vector<index_t> get_vertex_faces(index_t);
     std::vector<index_t> get_face_vertexes(index_t);
+
+    vec3f get_face_normal(index_t);
 };
 
 // ---------- public ----------

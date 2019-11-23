@@ -5,7 +5,7 @@
 
 // ---------- private ----------
 
-// this generates the mesh triangles
+// this generates the mesh triangles and the edges
 // mx = terrain size on the x axis
 // my = terrain size on the y axix
 void half_mesh::_gen_objects(std::vector<half::triangle> &triangles, std::vector<half::edge> &edges,
@@ -43,21 +43,40 @@ void half_mesh::_gen_objects(std::vector<half::triangle> &triangles, std::vector
         edges.emplace_back(edge.first, edge.second);
     }
 }
+
+void half_mesh::_update_normals(){
+    normals.clear();
+
+    for(auto face : face_vector){
+        auto vf = get_face_vertexes(face);
+
+        vec3f A = points[vf[0]];
+        vec3f B = points[vf[1]];
+        vec3f C = points[vf[2]];
+
+        vec3f BA = A - B;
+        vec3f BC = C - B;
+
+        normals.emplace_back(BC.cross(BA).norm());
+    }
+}
 // ---------- public ----------
 
 half_mesh::half_mesh() { }
 
 // update the z component of each ponit that indexes to a half edge
-void half_mesh::update_mesh_z(std::function<point(index_t)> fn){
+void half_mesh::update_mesh_z(std::function<vec3f(index_t)> fn){
     points.clear();
 
     for(uint64_t i = 0; i < vertex_vector.size(); i++){
         points.push_back(fn(i));
     }
+
+    _update_normals();
 }
 
 // generate the half edge mesh
-void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<point(index_t)> fn){
+void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<vec3f(index_t)> fn){
     uint64_t num_of_verts = mx * my;
 
     std::map<std::pair<index_t, index_t>, index_t> edge_face_map; // index an edge to its face
@@ -196,6 +215,8 @@ void half_mesh::clear_mesh(){
     this->edge_index_map.clear();
 }
 
+
+
 const
 half_edge &half_mesh::half_at(index_t i) const {
     return this->half_vector[i];
@@ -272,19 +293,24 @@ std::vector<index_t> half_mesh::get_vertex_faces(index_t i){
 std::vector<index_t> half_mesh::get_face_vertexes(index_t i){
     std::vector<index_t> ret;
 
-    index_t start;
-    index_t curr;
+    index_t curr_he = i;
+    index_t start_vert, curr_vert;
 
-    start = curr = half_vector[i].vertex;
+    start_vert = curr_vert = half_vector[curr_he].vertex;
 
     do{
-        ret.push_back(curr);
+        ret.push_back(curr_vert);
 
-        curr = half_vector[i].next;
+        curr_he = half_vector[curr_he].next;
+        curr_vert = half_vector[curr_he].vertex;
 
-    }while(start != curr);
+    }while(start_vert != curr_vert);
 
     return ret;
+}
+
+vec3f half_mesh::get_face_normal(index_t i){
+    return normals[i];
 }
 
 bool half_mesh::vertex_boundary(index_t i){

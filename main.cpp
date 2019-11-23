@@ -6,6 +6,7 @@
 #include "include/button.hpp"
 #include "include/noise.hpp"
 #include "include/half_mesh.hpp"
+#include "include/vec3f.hpp"
 
 #define WINDOW_Y 768
 #define WINDOW_X 1337
@@ -16,6 +17,7 @@
 // load from file
 // camera
 // pipeline
+
 
 sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
@@ -56,20 +58,20 @@ int main(){
     //     curr_view = GOURAUD;
     // }));
 
-    half_mesh terrain_mesh;
+    half_mesh terrain;
 
-    uint64_t mx = 4;
-    uint64_t my = 4;
+    uint64_t mx = 2;
+    uint64_t my = 2;
 
     noise height(WINDOW_X, WINDOW_Y);
 
     height.gen(time(NULL));
 
-    terrain_mesh.build_mesh(mx, my, [&height, &mx](index_t index) -> point {
+    terrain.build_mesh(mx, my, [&height, &mx](index_t index) -> vec3f {
             uint64_t i = index / mx;
             uint64_t j = index % mx;
 
-            return point((float)i, (float)j, (float)height[i][j]);
+            return vec3f((float)i, (float)j, (float)height[i][j]);
     });
 
     while(win.isOpen()){
@@ -126,6 +128,25 @@ int main(){
                     // camera para cima
                     break;
                 default:
+                    // referência de como fazer algumas coisas
+                    // pontos de uma face
+                    for(auto face : terrain.face_vector){
+                        std::cout << "face -> " << "half_edge ->  "<< face << std::endl;
+                        auto vertexes = terrain.get_face_vertexes(face);
+
+                        for(auto vertex : vertexes){
+                            auto p = terrain.points[vertex];
+                            std::cout << "\t" << p.x << "," << p.y << "," << p.z << std::endl;
+                        }
+                    }
+                    // normal da face
+                    for(index_t i = 0; i < (index_t)terrain.face_vector.size(); i++){
+                        vec3f normal = terrain.get_face_normal(i);
+                        std::cout << "normal da face: " << i << " "
+                                  << "(" << normal.x << ","
+                                  << normal.y << ","
+                                  << normal.z << ")" << std::endl;
+                    }
                     break;
                 }
                 break;
@@ -140,19 +161,20 @@ int main(){
                 }
                 break;
             default:
-                for(index_t i : terrain_mesh.edge_vector){
+                for(index_t i : terrain.edge_vector){
                     sf::VertexArray lines(sf::Lines, 2);
-                    std::pair<index_t, index_t> dir = terrain_mesh.half_direction(i);
+                    std::pair<index_t, index_t> dir = terrain.half_direction(i);
 
-                    auto srt = terrain_mesh.points[dir.first];
-                    auto end = terrain_mesh.points[dir.second];
+                    auto srt = terrain.points[dir.first];
+                    auto end = terrain.points[dir.second];
 
                     // just for testing
-                    lines[0].position.x = (srt.x() + 10) * 10;
-                    lines[0].position.y = (srt.y() + 10) * 10;
+                    lines[0].position.x = (srt.x + 10) * 10;
+                    lines[0].position.y = (srt.y + 10) * 10;
                     lines[0].color = sf::Color::Green;
-                    lines[1].position.x = (end.x() + 10) * 10;
-                    lines[1].position.y = (end.y() + 10) * 10;
+
+                    lines[1].position.x = (end.x + 10) * 10;
+                    lines[1].position.y = (end.y + 10) * 10;
                     lines[1].color = sf::Color::Blue;
 
                     win.draw(lines);

@@ -15,8 +15,6 @@ half_edge &half_edge::operator = (const half_edge &rhs){
     this->next = rhs.next;
     this->pair = rhs.pair;
     this->vertex = rhs.vertex;
-    // TODO: swap this for the sf::vertex
-    this->xyz = rhs.xyz;
 
     return *this;
 }

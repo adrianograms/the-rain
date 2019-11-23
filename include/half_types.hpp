@@ -7,8 +7,7 @@
 typedef int64_t index_t;
 
 namespace half{
-    class triangle{
-    public:
+    struct triangle{
         // index into the half edge vector
         index_t v[3];
 
@@ -34,8 +33,7 @@ namespace half{
         }
     };
 
-    class edge{
-    public:
+    struct edge{
         // index into the half edge vector
         index_t e[2];
 
@@ -59,40 +57,6 @@ namespace half{
         }
     };
 }
-
-// TODO: finish
-class point{
-public:
-    float p[3];
-
-    point();
-
-    point(float i, float j, float k){
-        p[0] = i;
-        p[1] = j;
-        p[2] = k;
-    }
-
-    float x(){
-        return p[0];
-    }
-
-    float y(){
-        return p[1];
-    }
-
-    float z(){
-        return p[2];
-    }
-};
-
-// TODO: finish
-class triangle{
-    index_t he[3];
-
-    point cords[3];
-};
-
 
 typedef enum {WIREFRAME, FLAT, GOURAUD} view_mode;
 
