@@ -237,13 +237,52 @@ std::vector<index_t> half_mesh::vertex_faces(index_t i){
     half_start = half_next = this->vertex_vector[i];
 
     do{
-        const half_edge half_at = this->half_vector[i];
+        const half_edge half_at = half_vector[half_next];
         if(half_at.face != -1){
-            ret.push_back(half_at.vertex);
+            ret.push_back(half_at.face);
         }
 
         half_next = this->half_vector[half_at.pair].next;
     }while(half_start != half_next);
+
+    return ret;
+}
+// param i is the vertex number
+std::vector<index_t> half_mesh::get_vertex_faces(index_t i){
+    std::vector<index_t> ret;
+
+    index_t start;
+    index_t curr;
+
+    start = curr = vertex_vector[i];
+
+    do{
+        const half_edge half = half_vector[curr];
+        if(half.face != -1){
+            ret.push_back(half.face);
+        }
+
+        curr = half_vector[half.pair].next;
+
+    }while(start != curr);
+    return ret;
+}
+
+// param i is the face number
+std::vector<index_t> half_mesh::get_face_vertexes(index_t i){
+    std::vector<index_t> ret;
+
+    index_t start;
+    index_t curr;
+
+    start = curr = half_vector[i].vertex;
+
+    do{
+        ret.push_back(curr);
+
+        curr = half_vector[i].next;
+
+    }while(start != curr);
 
     return ret;
 }

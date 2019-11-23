@@ -19,34 +19,47 @@
 
 sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
-std::vector<button> menu;
-
 int main(){
-    button save("assets/save_button.png", {30, 60}, [](){
+    std::vector<button> menu;
+
+    view_mode curr_view;
+
+    button save("assets/bs.png", {30, 60}, [](){
         std::cout << "save pressed" << std::endl;
     });
 
-    button load("assets/load_button.png", {60, 60}, [](){
+    button load("assets/bs.png", {90, 60}, [](){
         std::cout << "load pressed" << std::endl;
     });
-
-    button texture("assets/texture_button.png", {90, 90}, [](){
-        std::cout << "texture pressed" << std::endl;
-    });
-
-    button gen("assets/gen_button.png", {120, 120}, []{
-        std::cout << "gen pressed" << std::endl;
-    });
-
-    button smoth("assets/smoth_button.png", {150, 150}, []{
-        std::cout << "smoth pressed" << std::endl;
-    });
-
+    // menu.push_back(button("assets/bs.png", {30, 60}, [](){
+    //     std::cout << "save pressed" << std::endl;
+    // }));
+    // menu.push_back(button("assets/sad.png", {60, 60}, [](){
+    //     std::cout << "load pressed" << std::endl;
+    // }));
+    // menu.push_back(button("assets/bs.png", {90, 90}, [](){
+    //     std::cout << "texture pressed" << std::endl;
+    // }));
+    //     menu.push_back(button("assets/bs.png", {120, 120}, []{
+    //      std::cout << "gen pressed" << std::endl;
+    // }));
+    // menu.push_back(button("assets/bs.png", {150, 150}, []{
+    //     std::cout << "smoth pressed" << std::endl;
+    // }));
+    // menu.push_back(button("assest/bs.png", {300, 300}, [&curr_view](){
+    //     curr_view = WIREFRAME;
+    // }));
+    // menu.push_back(button("assest/bs.png", {320, 300}, [&curr_view](){
+    //     curr_view = FLAT;
+    // }));
+    // menu.push_back(button("assest/bs.png", {320, 300}, [&curr_view](){
+    //     curr_view = GOURAUD;
+    // }));
 
     half_mesh terrain_mesh;
 
-    uint64_t mx = 60;
-    uint64_t my = 70;
+    uint64_t mx = 4;
+    uint64_t my = 4;
 
     noise height(WINDOW_X, WINDOW_Y);
 
@@ -120,11 +133,11 @@ int main(){
                 switch(ev.mouseButton.button){
                 case sf::Mouse::Left:
                     save.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+                    load.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
                     break;
                 default:
                     break;
                 }
-
                 break;
             default:
                 for(index_t i : terrain_mesh.edge_vector){
@@ -143,15 +156,18 @@ int main(){
                     lines[1].color = sf::Color::Blue;
 
                     win.draw(lines);
-
                 }
-
                 break;
             }
         }
-        win.draw(save);
+
+        // ultar face
+        // pipeline
+        // aqui pinta
+
+        // win.draw(save);
+        // win.draw(load);
         win.display();
     }
-
     return 0;
 }

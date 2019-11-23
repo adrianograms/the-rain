@@ -14,12 +14,12 @@ public:
     button(std::string filename, sf::Vector2f at, std::function<void(void)> c): sf::Sprite(),
                                                                                 callback(c){
 
-        t.loadFromFile(filename);
-        setTexture(t);
+        this->t.loadFromFile(filename);
+        this->setTexture(this->t);
         setPosition(at);
     }
 
-    void button_pressed(sf::Vector2f mouse){
+    void button_pressed(sf::Vector2f mouse) const {
         if (getGlobalBounds().contains(mouse)){
             callback();
         }

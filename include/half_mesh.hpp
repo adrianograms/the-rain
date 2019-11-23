@@ -83,6 +83,10 @@ public:
     std::vector<index_t> vertex_faces(index_t);
     // is the vertex a boundary
     bool vertex_boundary(index_t);
+
+
+    std::vector<index_t> get_vertex_faces(index_t);
+    std::vector<index_t> get_face_vertexes(index_t);
 };
 
 // ---------- public ----------

@@ -31,7 +31,6 @@ namespace half{
             v[2] = rhs.v[2];
 
             return *this;
-
         }
     };
 
@@ -59,7 +58,6 @@ namespace half{
             return *this;
         }
     };
-
 }
 
 // TODO: finish
@@ -93,8 +91,9 @@ class triangle{
     index_t he[3];
 
     point cords[3];
-
-
 };
+
+
+typedef enum {WIREFRAME, FLAT, GOURAUD} view_mode;
 
 #endif
