@@ -18,50 +18,57 @@
 // camera
 // pipeline
 
-
 sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
 int main(){
     std::vector<button> menu;
 
-    view_mode curr_view;
+    view_mode curr_view = WIREFRAME;
 
-    button save("assets/bs.png", {30, 60}, [](){
+    button save("assets/button_save.png", {20, 20}, [](){
         std::cout << "save pressed" << std::endl;
     });
-
-    button load("assets/bs.png", {90, 60}, [](){
+    button load("assets/button_load.png", {20, 60}, [](){
         std::cout << "load pressed" << std::endl;
     });
-    // menu.push_back(button("assets/bs.png", {30, 60}, [](){
-    //     std::cout << "save pressed" << std::endl;
-    // }));
-    // menu.push_back(button("assets/sad.png", {60, 60}, [](){
-    //     std::cout << "load pressed" << std::endl;
-    // }));
-    // menu.push_back(button("assets/bs.png", {90, 90}, [](){
-    //     std::cout << "texture pressed" << std::endl;
-    // }));
-    //     menu.push_back(button("assets/bs.png", {120, 120}, []{
-    //      std::cout << "gen pressed" << std::endl;
-    // }));
-    // menu.push_back(button("assets/bs.png", {150, 150}, []{
-    //     std::cout << "smoth pressed" << std::endl;
-    // }));
-    // menu.push_back(button("assest/bs.png", {300, 300}, [&curr_view](){
-    //     curr_view = WIREFRAME;
-    // }));
-    // menu.push_back(button("assest/bs.png", {320, 300}, [&curr_view](){
-    //     curr_view = FLAT;
-    // }));
-    // menu.push_back(button("assest/bs.png", {320, 300}, [&curr_view](){
-    //     curr_view = GOURAUD;
-    // }));
+    button texture("assets/button_texture.png", {20, 100}, [](){
+        std::cout << "rexture pressed" << std::endl;
+    });
+    button wireframe("assets/button_wire.png", {20, WINDOW_Y - 50}, [&curr_view](){
+        curr_view = WIREFRAME;
+    });
+    button flat("assets/button_flat.png", {20, WINDOW_Y - 90}, [&curr_view](){
+        curr_view = FLAT;
+    });
+    button gouraud("assets/button_gouraud.png", {20, WINDOW_Y - 130}, [&curr_view](){
+        curr_view = GOURAUD;
+    });
+    button ka_plus("assets/button_plus.png", {WINDOW_X - 50, 20}, [](){
+        std::cout << "Ka plus" << std::endl;
+    });
+    button ka_minus("assets/button_minus.png", {WINDOW_X - 90, 20}, [](){
+        std::cout << "Ka minus" << std::endl;
+    });
+
+    button smoth("assets/button_smoth.png", {WINDOW_X - 50, WINDOW_Y - 50}, [](){
+        std::cout << "smoth" << std::endl;
+    });
+    button generate("assets/button_generate.png", {WINDOW_X - 50, WINDOW_Y - 90}, [](){
+        std::cout << "gen terrain" << std::endl;
+    });
+
+    std::vector<button*> select;
+    select.push_back(new button("assets/selected.png", {130, WINDOW_Y - 40}, [](){
+    }));
+    select.push_back(new button("assets/selected.png", {130, WINDOW_Y - 80}, [](){
+    }));
+    select.push_back(new button("assets/selected.png", {130, WINDOW_Y - 120}, [](){
+    }));
 
     half_mesh terrain;
 
-    uint64_t mx = 2;
-    uint64_t my = 2;
+    uint64_t mx = 20;
+    uint64_t my = 20;
 
     noise height(WINDOW_X, WINDOW_Y);
 
@@ -130,23 +137,23 @@ int main(){
                 default:
                     // referência de como fazer algumas coisas
                     // pontos de uma face
-                    for(auto face : terrain.face_vector){
-                        std::cout << "face -> " << "half_edge ->  "<< face << std::endl;
-                        auto vertexes = terrain.get_face_vertexes(face);
+                    // for(auto face : terrain.face_vector){
+                    //     std::cout << "face -> " << "half_edge ->  "<< face << std::endl;
+                    //     auto vertexes = terrain.get_face_vertexes(face);
 
-                        for(auto vertex : vertexes){
-                            auto p = terrain.points[vertex];
-                            std::cout << "\t" << p.x << "," << p.y << "," << p.z << std::endl;
-                        }
-                    }
-                    // normal da face
-                    for(index_t i = 0; i < (index_t)terrain.face_vector.size(); i++){
-                        vec3f normal = terrain.get_face_normal(i);
-                        std::cout << "normal da face: " << i << " "
-                                  << "(" << normal.x << ","
-                                  << normal.y << ","
-                                  << normal.z << ")" << std::endl;
-                    }
+                    //     for(auto vertex : vertexes){
+                    //         auto p = terrain.points[vertex];
+                    //         std::cout << "\t" << p.x << "," << p.y << "," << p.z << std::endl;
+                    //     }
+                    // }
+                    // // normal da face
+                    // for(index_t i = 0; i < (index_t)terrain.face_vector.size(); i++){
+                    //     vec3f normal = terrain.get_face_normal(i);
+                    //     std::cout << "normal da face: " << i << " "
+                    //               << "(" << normal.x << ","
+                    //               << normal.y << ","
+                    //               << normal.z << ")" << std::endl;
+                    // }
                     break;
                 }
                 break;
@@ -155,12 +162,18 @@ int main(){
                 case sf::Mouse::Left:
                     save.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
                     load.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+                    texture.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+                    flat.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+                    wireframe.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+                    gouraud.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+
                     break;
                 default:
                     break;
                 }
                 break;
             default:
+                win.clear();
                 for(index_t i : terrain.edge_vector){
                     sf::VertexArray lines(sf::Lines, 2);
                     std::pair<index_t, index_t> dir = terrain.half_direction(i);
@@ -187,9 +200,21 @@ int main(){
         // pipeline
         // aqui pinta
 
-        // win.draw(save);
-        // win.draw(load);
+        win.draw(save);
+        win.draw(load);
+        win.draw(wireframe);
+        win.draw(flat);
+        win.draw(gouraud);
+        win.draw(texture);
+        win.draw(ka_plus);
+        win.draw(ka_minus);
+        win.draw(*select[curr_view]);
         win.display();
+
+    }
+
+    for(auto *b : select){
+        delete b;
     }
     return 0;
 }
