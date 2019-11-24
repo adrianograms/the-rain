@@ -19,10 +19,12 @@ public:
         setPosition(at);
     }
 
-    void button_pressed(sf::Vector2f mouse) const {
-        if (getGlobalBounds().contains(mouse)){
+    bool button_pressed(sf::Vector2f mouse) const {
+        if(getGlobalBounds().contains(mouse)){
             callback();
+            return true;
         }
+        return false;
     }
 };
 
