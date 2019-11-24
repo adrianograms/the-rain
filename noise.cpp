@@ -2,19 +2,40 @@
 
 #define KERNEL_SIZE 7
 
-noise::noise(uint64_t mx, uint64_t my) : _mx(mx), _my(my){
+void noise::_allc_noise_map(){
     _noise_map = new uint8_t*[_my];
     for(uint64_t i = 0; i < _my; i++){
         _noise_map[i] = new uint8_t[_mx];
     }
+}
 
+void noise::_free_noise_map(){
+    for(uint64_t i = 0; i < _my; i++){
+        delete [] _noise_map[i];
+    }
+    delete [] _noise_map;
+}
+
+void noise::_allc_kernel(){
     _kernel = new uint16_t*[KERNEL_SIZE];
     for(std::size_t i = 0; i < 7; i++){
         _kernel[i] = new uint16_t[KERNEL_SIZE];
     }
+}
 
-    // // 7 x 7 kernel
-    // default gausina blur
+void noise::_free_kernel(){
+    for(uint64_t i = 0; i < KERNEL_SIZE; i++){
+        delete [] _kernel[i];
+    }
+    delete [] _kernel;
+}
+
+noise::noise(uint64_t mx, uint64_t my) : _mx(mx), _my(my){
+    _allc_noise_map();
+    _allc_kernel();
+
+    // 7 x 7 kernel
+    // default gauss blur
     _kernel[0][0]=1;  _kernel[0][1]=6;   _kernel[0][2]=15;  _kernel[0][3]=20;  _kernel[0][4]=15;  _kernel[0][5]=6;   _kernel[0][6]=1;
     _kernel[1][0]=6;  _kernel[1][1]=36;  _kernel[1][2]=90;  _kernel[1][3]=120; _kernel[1][4]=90;  _kernel[1][5]=36;  _kernel[1][6]=6;
     _kernel[2][0]=15; _kernel[2][1]=90;  _kernel[2][2]=225; _kernel[2][3]=300; _kernel[2][4]=225; _kernel[2][5]=90;  _kernel[2][6]=15;
@@ -23,18 +44,22 @@ noise::noise(uint64_t mx, uint64_t my) : _mx(mx), _my(my){
     _kernel[5][0]=6;  _kernel[5][1]=36;  _kernel[5][2]=90;  _kernel[5][3]=120; _kernel[5][4]=90;  _kernel[5][5]=36;  _kernel[5][6]=6;
     _kernel[6][0]=1;  _kernel[6][1]=6;   _kernel[6][2]=15;  _kernel[6][3]=20;  _kernel[6][4]=15;  _kernel[6][5]=6;   _kernel[6][6]=1;
 
+    gen(std::time(NULL));
+
+}
+
+void noise::update(uint64_t mx, uint64_t my){
+    _free_noise_map();
+
+    _mx = mx;
+    _my = my;
+
+    _allc_noise_map();
 }
 
 noise::~noise(){
-    for(uint64_t i = 0; i < _my; i++){
-        delete [] _noise_map[i];
-    }
-    delete [] _noise_map;
-
-    for(uint64_t i = 0; i < KERNEL_SIZE; i++){
-        delete [] _kernel[i];
-    }
-    delete [] _kernel;
+    _free_noise_map();
+    _free_kernel();
 }
 
 void noise::gen(uint64_t seed){
@@ -116,6 +141,4 @@ void noise::smooth(){
 
 uint8_t * noise::operator [] (uint64_t index) const {
     return _noise_map[index];
-
-
 }

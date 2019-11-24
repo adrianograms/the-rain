@@ -10,8 +10,18 @@
 #include "include/vec3f.hpp"
 #include "include/utils.hpp"
 
-#define WINDOW_Y 768
-#define WINDOW_X 1337
+#define WIN_Y 768
+#define WIN_X 1337
+
+#define DOLOG
+#ifdef DOLOG
+#define LOG(s) do{                                                  \
+        auto t = time(NULL);                                        \
+        std::cout << std::ctime(&t) << "::" << (s) << std::endl;    \
+            }while(false);
+#else
+#define LOG(s)
+#endif
 
 // TODO list:
 // menus
@@ -20,76 +30,105 @@
 // camera
 // pipeline
 
-sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
+sf::RenderWindow win(sf::VideoMode(WIN_X, WIN_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
 int main(){
+    win.setVerticalSyncEnabled(true);
 
-    config conf;
-    // save button
-    conf.add_button("assets/button_save.png", {20, 20}, [](){
-        std::cout << "save pressed" << std::endl;
-    });
-    conf.add_button("assets/button_save.png", {20, 20}, [](){
-        std::cout << "save pressed" << std::endl;
-    });
-    // load button
-    conf.add_button("assets/button_load.png", {20, 60}, [](){
-        std::cout << "load pressed" << std::endl;
-    });
-    // load texture button
-    conf.add_button("assets/button_texture.png", {20, 100}, [](){
-        std::cout << "rexture pressed" << std::endl;
-    });
-    // wireframe button
-    conf.add_button("assets/button_wire.png", {20, WINDOW_Y - 50}, [&conf](){
-        conf.curr_view = WIREFRAME;
-    });
-    // flat button
-    conf.add_button("assets/button_flat.png", {20, WINDOW_Y - 90}, [&conf](){
-        conf.curr_view = FLAT;
-    });
-    // gouraud
-    conf.add_button("assets/button_gouraud.png", {20, WINDOW_Y - 130}, [&conf](){
-        conf.curr_view = GOURAUD;
-    });
-    // ka_pluss
-    conf.add_button("assets/button_plus.png", {WINDOW_X - 50, 20}, [](){
-        std::cout << "Ka plus" << std::endl;
-    });
-    // ka_minus
-    conf.add_button("assets/button_minus.png", {WINDOW_X - 90, 20}, [](){
-        std::cout << "Ka minus" << std::endl;
-    });
-    // smoth terrain button
-    conf.add_button("assets/button_smoth.png", {WINDOW_X - 120, WINDOW_Y - 50}, [](){
-        std::cout << "smoth" << std::endl;
-    });
-    // generate terrain button
-    conf.add_button("assets/button_generate.png", {WINDOW_X - 120, WINDOW_Y - 90}, [](){
-        std::cout << "gen terrain" << std::endl;
-    });
-
-    std::vector<button*> select;
-    select.push_back(new button("assets/selected.png", {130, WINDOW_Y -  40}, [](){ }));
-    select.push_back(new button("assets/selected.png", {130, WINDOW_Y -  80}, [](){ }));
-    select.push_back(new button("assets/selected.png", {130, WINDOW_Y - 120}, [](){ }));
-
+    config    conf;
+    noise     height(conf.my, conf.mx);
     half_mesh terrain;
 
-    uint64_t mx = 20;
-    uint64_t my = 20;
-
-    noise height(WINDOW_X, WINDOW_Y);
-
-    height.gen(time(NULL));
-
-    terrain.build_mesh(mx, my, [&height, &mx](index_t index) -> vec3f {
-            uint64_t i = index / mx;
-            uint64_t j = index % mx;
+    auto zmap = [&height, &conf](index_t index) -> vec3f {
+            uint64_t i = index / conf.mx;
+            uint64_t j = index % conf.mx;
 
             return vec3f((float)i, (float)j, (float)height[i][j]);
+    };
+
+    auto terrain_update_size = [&terrain, &height, &conf, &zmap](uint64_t x, uint64_t y){
+        conf.mx = x;
+        conf.my = y;
+        height.update(conf.mx, conf.my);
+        height.gen(std::time(NULL));
+        terrain.clear_mesh();
+        terrain.build_mesh(conf.mx, conf.my, zmap);
+    };
+
+    conf.load_font("assets/OpenSans-Regular.ttf");
+
+    // buttons
+    conf.add_button("assets/button_save.png", {20, 20}, [](){
+        LOG("Save pressed");
+    });
+    conf.add_button("assets/button_load.png", {20, 60}, [](){
+        LOG("Load pressed");
+    });
+    conf.add_button("assets/button_texture.png", {20, 100}, [](){
+        LOG("Load texture pressed");
+    });
+    conf.add_button("assets/button_wire.png", {20, WIN_Y - 50}, [&conf](){
+        conf.vmode = WIREFRAME;
+        LOG("Wireframe mode");
+    });
+    conf.add_button("assets/button_flat.png", {20, WIN_Y - 90}, [&conf](){
+        conf.vmode = FLAT;
+        LOG("Flat shading mode");
+    });
+    conf.add_button("assets/button_gouraud.png", {20, WIN_Y - 130}, [&conf](){
+        conf.vmode = GOURAUD;
+        LOG("Gouraud shading mode");
+    });
+    conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 90}, [&terrain_update_size, &conf](){
+        terrain_update_size(conf.mx, ++conf.my);
+        LOG("Terrain mx++")
+    });
+    conf.add_button("assets/button_minus.png", {WIN_X - 300, WIN_Y - 90}, [&terrain_update_size, &conf](){
+        terrain_update_size(conf.mx, conf.my == 2 ? 2 : --conf.my);
+        LOG("Terrain mx--")
+    });
+    conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+        LOG("Terrain my++")
+    });
+    conf.add_button("assets/button_minus.png", {WIN_X - 300, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(conf.mx == 2 ? 2 : --conf.mx, conf.my);
+        LOG("Terrain my--")
+    });
+    conf.add_button("assets/button_smoth.png", {WIN_X - 120, WIN_Y - 50}, [&height](){
+        height.smooth();
+        LOG("Height smoth");
+    });
+    conf.add_button("assets/button_generate.png", {WIN_X - 120, WIN_Y - 90}, [&height](){
+        height.gen(std::time(NULL));
+        LOG("Height genenete");
+    });
+    // overlays
+    conf.add_overlay({WIN_X - 230, WIN_Y - 85}, [&conf]() -> std::string {
+        return "X: " + std::to_string(conf.my);
+    });
+    conf.add_overlay({WIN_X - 230, WIN_Y - 45}, [&conf]() -> std::string {
+        return "Y: " + std::to_string(conf.mx);
+    });
+    conf.add_overlay({WIN_X - 300, WIN_Y - 110}, []() -> std::string {
+        return "Terrain size:";
+    });
+    conf.add_overlay({WIN_X - 120, WIN_Y - 110}, []() -> std::string {
+        return "Height map:";
+    });
+    conf.add_overlay({20, WIN_Y - 150}, [&conf]() -> std::string {
+        static std::string curr_mode[3] = {"Wireframe", "Flat shade", "Gouraud shade"};
+        return "> " + curr_mode[conf.vmode];
+    });
+    conf.add_overlay({125, 25}, [&conf]() -> std::string {
+        return conf.file_name == "" ? "> No save file" : conf.file_name;
+    });
+    conf.add_overlay({125, 105}, [&conf]() -> std::string {
+        return conf.file_name_texture == "" ? "> No texture" : conf.file_name_texture;
     });
 
+
+    terrain.build_mesh(conf.mx, conf.my, zmap);
     while(win.isOpen()){
 
         sf::Event ev;
@@ -176,25 +215,6 @@ int main(){
                 }
                 break;
             default:
-                win.clear();
-                for(index_t i : terrain.edge_vector){
-                    sf::VertexArray lines(sf::Lines, 2);
-                    std::pair<index_t, index_t> dir = terrain.half_direction(i);
-
-                    auto srt = terrain.points[dir.first];
-                    auto end = terrain.points[dir.second];
-
-                    // just for testing
-                    lines[0].position.x = (srt.x + 10) * 10;
-                    lines[0].position.y = (srt.y + 10) * 10;
-                    lines[0].color = sf::Color::Green;
-
-                    lines[1].position.x = (end.x + 10) * 10;
-                    lines[1].position.y = (end.y + 10) * 10;
-                    lines[1].color = sf::Color::Blue;
-
-                    win.draw(lines);
-                }
                 break;
             }
         }
@@ -206,9 +226,28 @@ int main(){
         // void draw(terrain, srt_points, visible_faces);
 
         // ignorem isso, vou mudar
+        win.clear();
+        for(index_t i : terrain.edge_vector){
+            sf::VertexArray lines(sf::Lines, 2);
+            std::pair<index_t, index_t> dir = terrain.half_direction(i);
+
+            auto srt = terrain.points[dir.first];
+            auto end = terrain.points[dir.second];
+
+            // just for testing
+            lines[0].position.x = (srt.x + 10) * 10;
+            lines[0].position.y = (srt.y + 10) * 10;
+            lines[0].color = sf::Color::Green;
+
+            lines[1].position.x = (end.x + 10) * 10;
+            lines[1].position.y = (end.y + 10) * 10;
+            lines[1].color = sf::Color::Blue;
+
+            win.draw(lines);
+        }
 
         conf.draw_interface(win);
-        win.draw(*select[conf.curr_view]);
+        conf.draw_overlay(win);
         win.display();
     }
 
