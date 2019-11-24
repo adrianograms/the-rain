@@ -88,7 +88,7 @@ public:
     std::vector<index_t> get_vertex_faces(index_t);
     std::vector<index_t> get_face_vertexes(index_t);
 
-    vec3f get_face_normal(index_t);
+    vec3f get_face_normal(index_t) const;
 };
 
 // ---------- public ----------

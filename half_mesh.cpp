@@ -309,7 +309,7 @@ std::vector<index_t> half_mesh::get_face_vertexes(index_t i){
     return ret;
 }
 
-vec3f half_mesh::get_face_normal(index_t i){
+vec3f half_mesh::get_face_normal(index_t i) const {
     return normals[i];
 }
 

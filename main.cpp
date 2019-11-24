@@ -18,41 +18,65 @@
 // camera
 // pipeline
 
+// return as faces por index que sao visiveis
+// n é o vetor n da câmera
+std::vector<index_t> filter_normal(const half_mesh &terrain, vec3f n){
+    std::vector<index_t> ret;
+
+    // n . N > 0
+    for(index_t i = 0; i < (index_t)terrain.face_vector.size(); i++){
+        if(n.dot(terrain.get_face_normal(i)) > 0){
+            ret.push_back(i);
+        }
+    }
+    return ret;
+}
+
+
 sf::RenderWindow win(sf::VideoMode(WINDOW_X, WINDOW_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
 int main(){
-    std::vector<button> menu;
+    std::vector<button*> display;
 
     view_mode curr_view = WIREFRAME;
 
-    button save("assets/button_save.png", {20, 20}, [](){
+    // save button
+    display.push_back(new button("assets/button_save.png", {20, 20}, [](){
         std::cout << "save pressed" << std::endl;
-    });
-    button load("assets/button_load.png", {20, 60}, [](){
+    }));
+    // load button
+    display.push_back(new button("assets/button_load.png", {20, 60}, [](){
         std::cout << "load pressed" << std::endl;
-    });
-    button texture("assets/button_texture.png", {20, 100}, [](){
+    }));
+    // load texture button
+    display.push_back(new button("assets/button_texture.png", {20, 100}, [](){
         std::cout << "rexture pressed" << std::endl;
-    });
-    button wireframe("assets/button_wire.png", {20, WINDOW_Y - 50}, [&curr_view](){
+    }));
+    // wireframe button
+    display.push_back(new button("assets/button_wire.png", {20, WINDOW_Y - 50}, [&curr_view](){
         curr_view = WIREFRAME;
-    });
-    button flat("assets/button_flat.png", {20, WINDOW_Y - 90}, [&curr_view](){
+    }));
+    // flat button
+    display.push_back(new button("assets/button_flat.png", {20, WINDOW_Y - 90}, [&curr_view](){
         curr_view = FLAT;
-    });
-    button gouraud("assets/button_gouraud.png", {20, WINDOW_Y - 130}, [&curr_view](){
+    }));
+    // gouraud
+    display.push_back(new button("assets/button_gouraud.png", {20, WINDOW_Y - 130}, [&curr_view](){
         curr_view = GOURAUD;
-    });
-    button ka_plus("assets/button_plus.png", {WINDOW_X - 50, 20}, [](){
+    }));
+    // ka_pluss
+    display.push_back(new button("assets/button_plus.png", {WINDOW_X - 50, 20}, [](){
         std::cout << "Ka plus" << std::endl;
-    });
-    button ka_minus("assets/button_minus.png", {WINDOW_X - 90, 20}, [](){
+    }));
+    // ka_minus
+    display.push_back(new button("assets/button_minus.png", {WINDOW_X - 90, 20}, [](){
         std::cout << "Ka minus" << std::endl;
-    });
-
-    button smoth("assets/button_smoth.png", {WINDOW_X - 50, WINDOW_Y - 50}, [](){
+    }));
+    // smoth terrain button
+    display.push_back(new button("assets/button_smoth.png", {WINDOW_X - 50, WINDOW_Y - 50}, [](){
         std::cout << "smoth" << std::endl;
-    });
+    }));
+    // generate terrain button
     button generate("assets/button_generate.png", {WINDOW_X - 50, WINDOW_Y - 90}, [](){
         std::cout << "gen terrain" << std::endl;
     });
@@ -160,13 +184,9 @@ int main(){
             case sf::Event::MouseButtonPressed:
                 switch(ev.mouseButton.button){
                 case sf::Mouse::Left:
-                    save.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
-                    load.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
-                    texture.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
-                    flat.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
-                    wireframe.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
-                    gouraud.button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
-
+                    for(const button *b : display){
+                        b->button_pressed({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+                    }
                     break;
                 default:
                     break;
@@ -196,25 +216,19 @@ int main(){
             }
         }
 
-        // ultar face
-        // pipeline
-        // aqui pinta
+        auto visible_faces = filter_normal(terrain, vec3f(0,0,0));
 
-        win.draw(save);
-        win.draw(load);
-        win.draw(wireframe);
-        win.draw(flat);
-        win.draw(gouraud);
-        win.draw(texture);
-        win.draw(ka_plus);
-        win.draw(ka_minus);
+        // std::vector<vec3f> srt_points = apply_transf(terrain, visible_faces, cam.get_proj_mat(curr_view));
+
+        // void draw(terrain, srt_points, visible_faces);
+
+        // ignorem isso, vou mudar
+        for(const button *b : display){
+            win.draw(*b);
+        }
         win.draw(*select[curr_view]);
         win.display();
-
     }
 
-    for(auto *b : select){
-        delete b;
-    }
     return 0;
 }
