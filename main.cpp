@@ -23,6 +23,15 @@
 #define LOG(s)
 #endif
 
+struct light{
+    std::string x;
+    std::string y;
+    std::string z;
+    // demais coisas da luz
+
+    light(): x("0"), y("0"), z("0") {}
+};
+
 // TODO list:
 // menus
 // save to file
@@ -54,6 +63,7 @@ int main(){
     config    conf;
     noise     height(conf.my, conf.mx);
     half_mesh terrain;
+    light     lpoint;
 
     auto zmap = [&height, &conf](index_t index) -> vec3f {
         uint64_t i = index / conf.mx;
@@ -97,6 +107,7 @@ int main(){
         win.draw(sprite);
     };
 
+
     conf.load_font("assets/OpenSans-Regular.ttf");
 
     auto read_input = [&draw_ui](std::string &to) {
@@ -116,7 +127,12 @@ int main(){
                         if(a == 13){
                             return;
                         }
-                        to += a;
+                        if(a == 8 && to.size() != 0){
+                            to.pop_back();
+                        }
+                        else{
+                            to += a;
+                        }
 
                     }
                 default:
@@ -176,6 +192,18 @@ int main(){
         height.gen(std::time(NULL));
         LOG("Height genenete");
     });
+    conf.add_button("assets/button_x.png", {140, WIN_Y - 130}, [&read_input, &lpoint](){
+        read_input(lpoint.x);
+        LOG("Camera x");
+    });
+    conf.add_button("assets/button_y.png", {140, WIN_Y - 90}, [&read_input, &lpoint](){
+        read_input(lpoint.y);
+        LOG("Camera y");
+    });
+    conf.add_button("assets/button_z.png", {140, WIN_Y - 50}, [&read_input, &lpoint](){
+        read_input(lpoint.z);
+        LOG("Camera z");
+    });
     // overlays
     conf.add_overlay({WIN_X - 230, WIN_Y - 85}, [&conf]() -> std::string {
         return "X: " + std::to_string(conf.my);
@@ -190,7 +218,7 @@ int main(){
         return "Height map:";
     });
     conf.add_overlay({20, WIN_Y - 150}, [&conf]() -> std::string {
-        static std::string curr_mode[3] = {"Wireframe", "Flat shade", "Gouraud shade"};
+        static std::string curr_mode[3] = {"Wireframe", "Flat", "Gouraud"};
         return "> " + curr_mode[conf.vmode];
     });
     conf.add_overlay({125, 25}, [&conf]() -> std::string {
@@ -199,6 +227,16 @@ int main(){
     conf.add_overlay({125, 65}, [&conf]() -> std::string {
         return conf.file_name_texture == "" ? "> No texture" : conf.file_name_texture;
     });
+    conf.add_overlay({175, WIN_Y - 125}, [&lpoint]() -> std::string {
+        return lpoint.x;
+    });
+    conf.add_overlay({175, WIN_Y - 85}, [&lpoint]() -> std::string {
+        return lpoint.y;
+    });
+    conf.add_overlay({175, WIN_Y - 45}, [&lpoint]() -> std::string {
+        return lpoint.z;
+    });
+
 
     terrain.build_mesh(conf.mx, conf.my, zmap);
     while(win.isOpen()){
