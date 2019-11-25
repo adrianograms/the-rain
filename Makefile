@@ -11,13 +11,14 @@ $(OBJECTS): include/noise.hpp include/half_edge.hpp include/half_mesh.hpp includ
 
 .PHONY: clean debug release
 
-debug:
-	CXXFLAGS += -g
-	all
+test: all
+	./main
 
-release:
-	CXXFLAGS += -O3
-	all
+debug: CXXFLAGS += -g
+debug: all
+
+release: CXXFLAGS += -O3
+release: all
 
 clean:
 	rm -f *.o

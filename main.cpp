@@ -61,7 +61,7 @@ int main(){
     win.setVerticalSyncEnabled(true);
 
     config    conf;
-    noise     height(conf.my, conf.mx);
+    noise     height(conf.mx, conf.my);
     half_mesh terrain;
     light     lpoint;
 
@@ -111,6 +111,40 @@ int main(){
     conf.load_font("assets/OpenSans-Regular.ttf");
 
     auto read_input = [&draw_ui](std::string &to) {
+        to = "";
+        while(win.isOpen()){
+
+            sf::Event e;
+
+            while(win.pollEvent(e)){
+                switch(e.type){
+                case sf::Event::Closed:
+                    win.close();
+                    break;
+                case sf::Event::TextEntered:
+                    if(e.text.unicode < 128){
+                        char a = static_cast<char>(e.text.unicode);
+                        if(a == 13){
+                            return;
+                        }
+                        if(a == 8 && to.size() != 0){
+                            to.pop_back();
+                        }
+                        else{
+                            to += a;
+                        }
+
+                    }
+                default:
+                    break;
+                }
+            }
+            win.clear();
+            draw_ui();
+        }
+    };
+
+    auto read_input_number = [&draw_ui](std::string &to){
         to = "";
         while(win.isOpen()){
 
@@ -236,7 +270,9 @@ int main(){
     conf.add_overlay({175, WIN_Y - 45}, [&lpoint]() -> std::string {
         return lpoint.z;
     });
-
+    conf.add_overlay({140, WIN_Y - 150}, []() -> std::string {
+        return "Light position:";
+    });
 
     terrain.build_mesh(conf.mx, conf.my, zmap);
     while(win.isOpen()){
