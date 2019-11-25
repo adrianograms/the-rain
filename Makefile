@@ -9,8 +9,6 @@ all: main.cpp $(OBJECTS)
 
 $(OBJECTS): include/noise.hpp include/half_edge.hpp include/half_mesh.hpp include/half_types.hpp include/utils.hpp include/pipeline.hpp include/overlay.hpp
 
-
-
 .PHONY: clean
 
 clean:

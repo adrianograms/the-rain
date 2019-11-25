@@ -1,6 +1,6 @@
 #include "include/noise.hpp"
 
-#define KERNEL_SIZE 7
+#define KERNEL_SIZE 5
 
 void noise::_allc_noise_map(){
     _noise_map = new uint8_t*[_my];
@@ -18,7 +18,7 @@ void noise::_free_noise_map(){
 
 void noise::_allc_kernel(){
     _kernel = new uint16_t*[KERNEL_SIZE];
-    for(std::size_t i = 0; i < 7; i++){
+    for(std::size_t i = 0; i < KERNEL_SIZE; i++){
         _kernel[i] = new uint16_t[KERNEL_SIZE];
     }
 }
@@ -36,13 +36,11 @@ noise::noise(uint64_t mx, uint64_t my) : _mx(mx), _my(my){
 
     // 7 x 7 kernel
     // default gauss blur
-    _kernel[0][0]=1;  _kernel[0][1]=6;   _kernel[0][2]=15;  _kernel[0][3]=20;  _kernel[0][4]=15;  _kernel[0][5]=6;   _kernel[0][6]=1;
-    _kernel[1][0]=6;  _kernel[1][1]=36;  _kernel[1][2]=90;  _kernel[1][3]=120; _kernel[1][4]=90;  _kernel[1][5]=36;  _kernel[1][6]=6;
-    _kernel[2][0]=15; _kernel[2][1]=90;  _kernel[2][2]=225; _kernel[2][3]=300; _kernel[2][4]=225; _kernel[2][5]=90;  _kernel[2][6]=15;
-    _kernel[3][0]=20; _kernel[3][1]=120; _kernel[3][2]=300; _kernel[3][3]=400; _kernel[3][4]=300; _kernel[3][5]=120; _kernel[3][6]=20;
-    _kernel[4][0]=15; _kernel[4][1]=90;  _kernel[4][2]=225; _kernel[4][3]=300; _kernel[4][4]=225; _kernel[4][5]=90;  _kernel[4][6]=15;
-    _kernel[5][0]=6;  _kernel[5][1]=36;  _kernel[5][2]=90;  _kernel[5][3]=120; _kernel[5][4]=90;  _kernel[5][5]=36;  _kernel[5][6]=6;
-    _kernel[6][0]=1;  _kernel[6][1]=6;   _kernel[6][2]=15;  _kernel[6][3]=20;  _kernel[6][4]=15;  _kernel[6][5]=6;   _kernel[6][6]=1;
+    _kernel[0][0] = 1; _kernel[0][1] =  4; _kernel[0][2] =  7; _kernel[0][3] =  4; _kernel[0][4] = 1;
+    _kernel[1][0] = 4; _kernel[1][1] = 16; _kernel[1][2] = 26; _kernel[1][3] = 16; _kernel[1][4] = 4;
+    _kernel[2][0] = 7; _kernel[2][1] = 26; _kernel[2][2] = 41; _kernel[2][3] = 26; _kernel[2][4] = 7;
+    _kernel[3][0] = 4; _kernel[3][1] = 16; _kernel[3][2] = 26; _kernel[3][3] = 16; _kernel[3][4] = 4;
+    _kernel[4][0] = 1; _kernel[4][1] =  4; _kernel[4][2] =  7; _kernel[4][3] =  4; _kernel[4][4] = 1;
 
     gen(std::time(NULL));
 

@@ -30,6 +30,22 @@
 // camera
 // pipeline
 
+const std::vector<sf::Color> palett = {{ 30,   0, 255},
+                                       { 12,  60, 232},
+                                       {  0, 142, 255},
+                                       { 12, 206, 232},
+                                       {  0, 255, 196},
+                                       {  0, 255, 110},
+                                       { 12, 232,  28},
+                                       { 89, 255,   0},
+                                       {186, 232,  12},
+                                       {255, 236,   0},
+                                       {255, 199,   0},
+                                       {232, 149,  12},
+                                       {255, 108,   0},
+                                       {232,  54,  12},
+                                       {255,   0,  29}};
+
 sf::RenderWindow win(sf::VideoMode(WIN_X, WIN_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
 
 int main(){
@@ -40,10 +56,10 @@ int main(){
     half_mesh terrain;
 
     auto zmap = [&height, &conf](index_t index) -> vec3f {
-            uint64_t i = index / conf.mx;
-            uint64_t j = index % conf.mx;
+        uint64_t i = index / conf.mx;
+        uint64_t j = index % conf.mx;
 
-            return vec3f((float)i, (float)j, (float)height[i][j]);
+        return vec3f((float)i, (float)j, (float)height[i][j]);
     };
 
     auto terrain_update_size = [&terrain, &height, &conf, &zmap](uint64_t x, uint64_t y){
@@ -55,16 +71,73 @@ int main(){
         terrain.build_mesh(conf.mx, conf.my, zmap);
     };
 
+    auto draw_ui = [&conf](){
+        conf.draw_interface(win);
+        conf.draw_overlay(win);
+        win.display();
+    };
+
+    auto draw_height_map = [&height, &conf](){
+        sf::Texture texture;
+        sf::Sprite  sprite;
+        sf::Image   buffer;
+        buffer.create(conf.my, conf.mx);
+
+        for(uint64_t i = 0; i < conf.my; i++){
+            for(uint64_t j = 0; j < conf.mx; j++){
+                auto c = palett[(uint64_t)((height[i][j] / 256.0) * palett.size())];
+                buffer.setPixel(i, j, c);
+            }
+        }
+
+        texture.loadFromImage(buffer);
+        sprite.setTexture(texture);
+        sprite.setPosition({(float)WIN_X - conf.my, 0});
+
+        win.draw(sprite);
+    };
+
     conf.load_font("assets/OpenSans-Regular.ttf");
 
-    // buttons
-    conf.add_button("assets/button_save.png", {20, 20}, [](){
+    auto read_input = [&draw_ui](std::string &to) {
+        to = "";
+        while(win.isOpen()){
+
+            sf::Event e;
+
+            while(win.pollEvent(e)){
+                switch(e.type){
+                case sf::Event::Closed:
+                    win.close();
+                    break;
+                case sf::Event::TextEntered:
+                    if(e.text.unicode < 128){
+                        char a = static_cast<char>(e.text.unicode);
+                        if(a == 13){
+                            return;
+                        }
+                        to += a;
+
+                    }
+                default:
+                    break;
+                }
+            }
+            win.clear();
+            draw_ui();
+        }
+    };
+
+// buttons
+    conf.add_button("assets/button_save.png", {20, 20}, [&read_input, &conf](){
+        read_input(conf.file_name);
         LOG("Save pressed");
     });
-    conf.add_button("assets/button_load.png", {20, 60}, [](){
+    conf.add_button("assets/button_texture.png", {20, 60}, [&read_input, &conf](){
+        read_input(conf.file_name_texture);
         LOG("Load pressed");
     });
-    conf.add_button("assets/button_texture.png", {20, 100}, [](){
+    conf.add_button("assets/button_load.png", {20, 100}, [](){
         LOG("Load texture pressed");
     });
     conf.add_button("assets/button_wire.png", {20, WIN_Y - 50}, [&conf](){
@@ -123,10 +196,9 @@ int main(){
     conf.add_overlay({125, 25}, [&conf]() -> std::string {
         return conf.file_name == "" ? "> No save file" : conf.file_name;
     });
-    conf.add_overlay({125, 105}, [&conf]() -> std::string {
+    conf.add_overlay({125, 65}, [&conf]() -> std::string {
         return conf.file_name_texture == "" ? "> No texture" : conf.file_name_texture;
     });
-
 
     terrain.build_mesh(conf.mx, conf.my, zmap);
     while(win.isOpen()){
@@ -227,6 +299,7 @@ int main(){
 
         // ignorem isso, vou mudar
         win.clear();
+
         for(index_t i : terrain.edge_vector){
             sf::VertexArray lines(sf::Lines, 2);
             std::pair<index_t, index_t> dir = terrain.half_direction(i);
@@ -246,9 +319,8 @@ int main(){
             win.draw(lines);
         }
 
-        conf.draw_interface(win);
-        conf.draw_overlay(win);
-        win.display();
+        draw_height_map();
+        draw_ui();
     }
 
     return 0;
