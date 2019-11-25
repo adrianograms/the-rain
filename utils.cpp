@@ -1,7 +1,7 @@
 #include "include/utils.hpp"
 
-config::config(): mx(10),
-                  my(10),
+config::config(): mx(20),
+                  my(20),
                   vmode(WIREFRAME),
                   file_name(""),
                   file_name_texture("") { }

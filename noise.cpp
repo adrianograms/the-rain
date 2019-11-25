@@ -66,8 +66,13 @@ void noise::gen(uint64_t seed){
 // #pragma omp parallel for schedule(dynamic, 1) collapse(2)
     for(uint64_t i = 0; i < _my; i++){
         for(uint64_t j = 0; j < _mx; j++){
-            if(std::rand() % 3 == 0){
-                _noise_map[i][j] = (uint8_t)(std::rand()% 256);
+            if(std::rand() % 2 == 0){
+                if(std::rand() % 4 == 0){
+                    _noise_map[i][j] = 0xFF;
+                }
+                else{
+                    _noise_map[i][j] = (uint8_t)(std::rand()% 256);
+                }
             }
             else{
                 _noise_map[i][j] = 0;
