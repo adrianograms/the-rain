@@ -128,7 +128,7 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
     }
     if(menor < 0)
         menor = 0;
-    if(maior > WINDOW_Y )
+    if(maior >= WINDOW_Y )
         maior = WINDOW_Y;
 
     int tamanho = maior - menor;
@@ -137,13 +137,13 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
         return (Point **)NULL;
     else 
     {
-        Point **vetor = new Point*[tamanho+1];
-        for(int i = 0; i <= tamanho; i++)
+        Point **vetor = new Point*[tamanho];
+        for(int i = 0; i < tamanho; i++)
             vetor[i] = NULL;
-        if(vertexes[pontos[0]].y > WINDOW_Y)
+        if(vertexes[pontos[0]].y >= WINDOW_Y)
         {
             out_of_bounds = true;
-            index = WINDOW_Y;
+            index = tamanho-1;
 
         }
         else if(vertexes[pontos[0]].y < 0)
@@ -195,7 +195,7 @@ void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face)
             cor2 = getColor(index_vertexes[i+1]);
             apply_light(cor2, iluminacao[i+1]);
         }
-
+        // Calculo dos delta
         double deltaX = ponto2.x - ponto1.x;
         double deltaY = ponto2.y - ponto1.y;
         double deltaZ = ponto2.z - ponto1.z;
@@ -207,16 +207,23 @@ void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face)
 
         if(deltaY != 0) 
         {
+            // Calcula as taixas, e para a cor calcula o delta e a taixa
             Tx = deltaX/std::abs(deltaY);
             Tz = deltaZ/std::abs(deltaY);
             txColor.calc(cor2, cor1, deltaY);
         }
 
-        if(0 <= ponto1.y <= WINDOW_Y)
+        //Verifica se o vertice ta dentro da tela e seta out_of_bouns dependendo da conclusão
+        if(0 <= ponto1.y < WINDOW_Y)
             out_of_bounds = false;
         else
             out_of_bounds = true;
         
+        /*
+        /Se o ponto está dentro das fronteiras, o vertice é adicionado na lista
+        /de forma a garantir que o ponto esteja na lista, e por questões de consistencia
+        / do index position
+        */
         if(out_of_bounds == false)
         {
             Point *novo = new Point(index_vertexes[i],ponto1.x,ponto1.y,ponto1.z,cor1);
@@ -227,11 +234,13 @@ void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face)
             
         }
 
+        // Verifica se ta subindo ou descendo
         if(deltaY > 0)
             inc = UP;
         else
             inc = DOWN;
 
+        //Seta os valores para o ponto logo abaixo/acima do vertice para sua primeira iteração
         int x_atual, y_atual, z_atual;
         sf::Color cor_atual;
         y_atual = round(ponto1.y) + inc;
@@ -239,40 +248,56 @@ void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face)
         z_atual = ponto1.z + Tz;
         cor_atual = txColor + cor1;
 
-        if(0 <= y_atual <= WINDOW_Y)
+        //Sempre verifica se o y está na fronteiras para atualizar o position
+        if(0 <= y_atual < WINDOW_Y)
             position += inc;
         
+        //Loop para a variação em y, ou seja, para cada scanline
         for(int j = 1; j < abs(round(deltaY)); j++)
         {
+            /*Se o y estiver dentro das fronteiras ele atualiza para poder processa-lo
+            /alem disso ele faz isso de forma que ele atualize e possa processar o proximo valor
+            /que no caso sera a fronteira da janela
+            */
             if(out_of_bounds == true)
-                if(0 <= y_atual <= WINDOW_Y)
+                if(0 <= y_atual < WINDOW_Y)
                     out_of_bounds = false;
             
             if(out_of_bounds == false)
             {
-                if(y_atual < 0 || y_atual > WINDOW_Y)
+                //Verifica se esta na janela
+                if(y_atual < 0 || y_atual >= WINDOW_Y)
                 {
                     out_of_bounds = true;
                     continue;
                 }
-
-                Point *novo = new Point(index_vertexes[i], x_atual,y_atual,z_atual,cor_atual);
-                if(vetor[position] == NULL)
-                    vetor[position] = novo;
                 else
-                    vetor[position]->next = novo;
-                
-                y_atual += inc;
-                x_atual += Tx;
-                z_atual += Tz;
-                cor_atual = txColor + cor_atual;
-                 if(0 <= y_atual <= WINDOW_Y)
-                    position += inc;
+                {
+                    //Adiciona um ponto no vetor
+                    Point *novo = new Point(index_vertexes[i], x_atual,y_atual,z_atual,cor_atual);
+
+                    if(vetor[position] == NULL)
+                        vetor[position] = novo;
+                    else
+                        vetor[position]->next = novo;
+            
+                    //Só atualiza quando ele consegue se mover dentro pelo vetor
+                    if(0 <= y_atual < WINDOW_Y)
+                        position += inc;
+                }
             }
+            //Atualiza para toda iteração
+            y_atual += inc;
+            x_atual += Tx;
+            z_atual += Tz;
+            cor_atual = txColor + cor_atual;
 
         }
         
     }
+    /*
+    /Processa para todas as scanline de baixo para cima
+    */
     for(int i =0; i< tamanho; i++)
     {
         if(vetor[i]->next == NULL || vetor[i]->x == vetor[i]->next->x)
@@ -287,12 +312,17 @@ void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face)
         }
         
     }
+
+    delete[] vetor;
 }
 
 void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim)
 {
+    // Se fim não existe então é necessario apenas pintar um pixel
     if(fim == NULL)
-        if(0 <= inicio->x <= WINDOW_X && 0 <= inicio->y <= WINDOW_Y)
+    {
+        //Porem o vertice pode estar fora das fronteiras
+        if(0 <= inicio->x < WINDOW_X && 0 <= inicio->y < WINDOW_Y)
         {
             if(z_buffer[(int)inicio->x][(int)inicio->y].first > inicio->z)
             {
@@ -301,8 +331,11 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
                 z_buffer[(int)inicio->x][(int)inicio->y].second = inicio->color;
             }
         }
+    }
     else
     {
+
+        //Calcula delta
         double deltaX = fim->x - inicio->x;
         double deltaZ = fim->z - inicio->z;
 
@@ -313,31 +346,37 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
 
         if(deltaX != 0)
         {
+            //Calcula taxa
             Tz = deltaZ/abs(deltaX);
             txColor.calc(fim->color, inicio->color, deltaX);
         }
+        //Corta a scanline caso ela passe da janela
         if(inicio->x < 0)
         {
+            //Se os dois estão fora tanto o inicio quanto o fim da scanline não faz nada
             if(fim->x < 0)
                 return;
             else
             {
-                double deslocamento = - inicio->x;
+                double deslocamento = (- inicio->x);
                 inicio->x = 0;
                 inicio->z = inicio->z + Tz*deslocamento;
                 inicio->color =  (txColor * deslocamento) + inicio->color ;
             }
             
         }
-        if(fim->x > WINDOW_X)
+        // Se o fim do vetor estiver fora ele "recorta"
+        if(fim->x >= WINDOW_X)
         {
-            double deslocamento = fim->x - WINDOW_X;
+            double deslocamento = fim->x - (WINDOW_X-1);
             fim->x = WINDOW_X;
             fim->z = fim->z - Tz*deslocamento;
             inicio->color =  (txColor * (-deslocamento)) + inicio->color ;
         }
+        // Anda por todo os x's da scanline
         double condition = fim->x - inicio->x;
 
+        //Seta os valores iniciais da scanline que são os valores do primeiro vertice da scanline
         double x_atual,y , z_atual;
         sf::Color color;
         x_atual = inicio->x;
@@ -347,16 +386,19 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
 
         for(int i =0; i<= floor(condition); i++)
         {
+            // Se o Z da scanline for maior ele atualiza a cor dele
             if(z_buffer[(int)x_atual][(int)y].first > z_atual)
             {
                 z_buffer[(int)x_atual][(int)y].first = z_atual;
 
                 z_buffer[(int)x_atual][(int)y].second = color;
             }
+            // Incrementa os valores para continuar andando pela scanline
             x_atual++;
             z_atual += Tz;
             color = txColor + color;
         }
+        //deleta os point's para limpar memoria
         delete(inicio);
         delete(fim);
     }
