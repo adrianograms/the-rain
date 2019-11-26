@@ -18,61 +18,63 @@
 #define UP 1
 #define DOWN -1
 
-typedef struct cor
+typedef struct txColor
 {
     double r;
     double g;
     double b;
-    cor() : r(0), g(0), b(0) {}
-    cor(double r, double b, double g): r(r), b(b), g(g) {}
-}Cor;
+    txColor() : r(0), g(0), b(0) {}
+    txColor(double r, double b, double g): r(r), b(b), g(g) {}
+    void calc(sf::Color &fim, sf::Color &inicio, double deltaY)
+    {
+        r = (fim.r - inicio.r)/std::abs(deltaY);
+        b = (fim.b - inicio.b)/std::abs(deltaY);
+        g = (fim.g - inicio.g)/std::abs(deltaY);
+    }
+    sf::Color operator + (const sf::Color &color)
+    {
+        return sf::Color(r + color.r,b + color.b,g + color.g);
+    }
+    txColor operator * (const double &v)
+    {
+        return txColor(r*v,b*v,g*v);
+    }
 
-typedef struct point
+}TxColor;
+
+typedef struct Point
 {
+    index_t vertex;
     double x;
     double y;
     double z;
-    double Ilr;
-    double Ilg;
-    double Ilb;
-    struct point *next;
-    point() : next (NULL) {}
-    point(double x, double y, double z, double Ilr, double Ilb, double Ilg): x(x), y(y), z(z), Ilr(Ilr), Ilb(Ilb), Ilg(Ilg), next(NULL) {}
+    sf::Color color;
+    struct Point *next;
+    Point() : next (NULL) {}
+    Point(index_t vertex ,double x, double y, double z, sf::Color color): vertex(vertex) ,x(x), y(y), z(z), color(color), next(NULL) {}
 
-}Point;
+};
 
-typedef struct ilumination
-{
-    double IR;
-    double IB;
-    double IG;
-    ilumination() : IR(0), IB(0), IG(0) {}
-    ilumination(double r, double b, double g) : IR(r), IB(b), IG(g) {}
-
-}Ilumination;
-
-double IlaR, IlaB, IlaG, KdR, KdB, KdG, KaR, KaB, KaG, KsR, KsB, KsG;
+double Ila, Kd, ka, Ks, lpoint;
 std::vector<vec3f> vertexes;
 half_mesh terrain;
 vec3f L, VRP;
 
-vec3f calc_normal_vertex(index_t)
+void apply_light(sf::Color &cor, double Il)
 {
-
+    cor.r = cor.r * Il;
+    cor.b = cor.b * Il;
+    cor.g = cor.g * Il;
 }
 
-double getColorRed(index_t) {}
-double getColorBlue(index_t) {}
-double getColorGreen(index_t) {}
-void scanline(std::pair <double, Cor> **z_buffer, Point *inicio, Point *fim);
+sf::Color getColor(index_t) {}
 
+void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim);
 
-std::vector<Ilumination> calc_ilumination(std::vector<index_t> &pontos)
+std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
 {
-    double IaR = IlaR*KaR;
-    double IaB = IlaB*KaB;
-    double IaG = IlaG*KaG;
-    std::vector<Ilumination> result;
+    double Iambiente = Ila*ka;
+    std::vector<double> result;
 
     for(int i = 0; i < pontos.size(); i++)
     {
@@ -87,41 +89,28 @@ std::vector<Ilumination> calc_ilumination(std::vector<index_t> &pontos)
         lVertice.normlize();
         float product = normal.dot(lVertice);
 
-        double IdR = 0;
-        double IdB = 0;
-        double IdG = 0;
+        double Id = 0;
+        double Is = 0;
 
-        if(product > 0)
+        if(product > 0) 
         {
-            IdR = getColorRed(pontos[i]) * KdR * product;
-            IdB = getColorBlue(pontos[i]) * KdB * product;
-            IdG = getColorGreen(pontos[i]) * KdG * product;
+            Id = lpoint * Kd * product;
+
+            vec3f rVertice = ((normal) * ((lVertice*2.0).dot(normal))) - lVertice;
+            rVertice.normlize();
+
+            vec3f sVertice = VRP - vertexes[pontos[i]];
+            sVertice.normlize();
+
+            double product2 = rVertice.dot(sVertice);
+
+            if(product2 > 0)
+                Is = lpoint * Ks * product;
         }
 
-        vec3f rVertice = ((normal) * ((lVertice*2.0).dot(normal))) - lVertice;
-        rVertice.normlize();
+        double It = Iambiente + Id + Is;
 
-        vec3f sVertice = VRP - vertexes[pontos[i]];
-        sVertice.normlize();
-
-        double product2 = rVertice.dot(sVertice);
-        double IsR = 0;
-        double IsB = 0;
-        double IsG = 0;
-
-        if(product2 > 0)
-        {
-            IsR = getColorRed(pontos[i]) * KsR * product;
-            IsB = getColorBlue(pontos[i]) * KsB * product;
-            IsG = getColorGreen(pontos[i]) * KsR * product;
-        }
-
-        double ItR = IaR + IdR + IsR;
-        double ItB = IaB + IdB + IsB;
-        double ItG = IaG + IdG + IsG;
-
-        Ilumination vertice(ItR, ItB, ItG);
-        result.push_back(vertice);
+        result.push_back(It);
     }
 
     return result;
@@ -172,14 +161,14 @@ std::vector<Ilumination> calc_ilumination(std::vector<index_t> &pontos)
     }
 }
 
-void guro_face(std::pair <double, Cor> **z_buffer, index_t face) 
+void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face) 
 {
     std::vector<index_t> index_vertexes = terrain.get_face_vertexes(face);
     index_t position = 0;
     int tamanho = 0;
     bool out_of_bounds = false;
     Point **vetor = criar_vetor(index_vertexes, position, out_of_bounds, tamanho);
-    std::vector<Ilumination> iluminacao = calc_ilumination(index_vertexes);
+    std::vector<double> iluminacao = calc_ilumination(index_vertexes);
 
     for(int i =0; i< index_vertexes.size(); i++)
     {
@@ -188,35 +177,39 @@ void guro_face(std::pair <double, Cor> **z_buffer, index_t face)
 
         int inc;
 
-        double deltaIR, deltaIB, deltaIG;
+        sf::Color cor1, cor2;
         // Se o vertice for o ultimo ele volta para o primeiro
         if(i == 2)
         {
             ponto2 = vertexes[index_vertexes[0]];
-            deltaIR = iluminacao[i].IR - iluminacao[0].IR;
-            deltaIB = iluminacao[i].IB - iluminacao[0].IB;
-            deltaIG = iluminacao[i].IG - iluminacao[0].IG;
+            cor1 = getColor(index_vertexes[i]);
+            apply_light(cor1, iluminacao[i]);
+            cor2 = getColor(index_vertexes[0]);
+            apply_light(cor2, iluminacao[0]);
         }
         else 
         {
             ponto2 = vertexes[index_vertexes[i+1]];
-            deltaIR = iluminacao[i].IR - iluminacao[i+1].IR;
-            deltaIB = iluminacao[i].IB - iluminacao[i+1].IB;
-            deltaIG = iluminacao[i].IG - iluminacao[i+1].IG;
+            cor1 = getColor(index_vertexes[i]);
+            apply_light(cor1, iluminacao[i]);
+            cor2 = getColor(index_vertexes[i+1]);
+            apply_light(cor2, iluminacao[i+1]);
         }
-        double deltaX = ponto1.x - ponto2.x;
-        double deltaY = ponto1.y - ponto2.y;
-        double deltaZ = ponto1.z - ponto2.z;
 
-        double Tx, Tz, TiR, TiB, TiG;
-        Tx = Tz = TiR = TiB = TiG = 0.0;
+        double deltaX = ponto2.x - ponto1.x;
+        double deltaY = ponto2.y - ponto1.y;
+        double deltaZ = ponto2.z - ponto1.z;
+
+        double Tx, Tz;
+        Tx = Tz = 0.0;
+
+        TxColor txColor = {0.0,0.0,0.0};
+
         if(deltaY != 0) 
         {
-            Tx = deltaX/deltaY;
-            Tz = deltaZ/deltaY;
-            TiR = deltaIR/deltaY;
-            TiB = deltaIB/deltaY;
-            TiG = deltaIG/deltaY;
+            Tx = deltaX/std::abs(deltaY);
+            Tz = deltaZ/std::abs(deltaY);
+            txColor.calc(cor2, cor1, deltaY);
         }
 
         if(0 <= ponto1.y <= WINDOW_Y)
@@ -226,7 +219,7 @@ void guro_face(std::pair <double, Cor> **z_buffer, index_t face)
         
         if(out_of_bounds == false)
         {
-            Point *novo = new Point(ponto1.x,ponto1.y,ponto1.z,iluminacao[i].IR,iluminacao[i].IB,iluminacao[i].IG);
+            Point *novo = new Point(index_vertexes[i],ponto1.x,ponto1.y,ponto1.z,cor1);
             if(vetor[position] == NULL)
                 vetor[position] = novo;
             else
@@ -235,17 +228,16 @@ void guro_face(std::pair <double, Cor> **z_buffer, index_t face)
         }
 
         if(deltaY > 0)
-            inc = DOWN;
-        else
             inc = UP;
+        else
+            inc = DOWN;
 
-        int x_atual, y_atual, z_atual, IR, IB, IG;
+        int x_atual, y_atual, z_atual;
+        sf::Color cor_atual;
         y_atual = round(ponto1.y) + inc;
         x_atual = ponto1.x + Tx;
         z_atual = ponto1.z + Tz;
-        IR = iluminacao[i].IR + TiR;
-        IB = iluminacao[i].IB + TiB;
-        IG = iluminacao[i].IG + TiG;
+        cor_atual = txColor + cor1;
 
         if(0 <= y_atual <= WINDOW_Y)
             position += inc;
@@ -264,7 +256,7 @@ void guro_face(std::pair <double, Cor> **z_buffer, index_t face)
                     continue;
                 }
 
-                Point *novo = new Point(x_atual,y_atual,z_atual,IR,IB,IG);
+                Point *novo = new Point(index_vertexes[i], x_atual,y_atual,z_atual,cor_atual);
                 if(vetor[position] == NULL)
                     vetor[position] = novo;
                 else
@@ -273,9 +265,7 @@ void guro_face(std::pair <double, Cor> **z_buffer, index_t face)
                 y_atual += inc;
                 x_atual += Tx;
                 z_atual += Tz;
-                IR += TiR;
-                IB += TiB;
-                IG += TiG;
+                cor_atual = txColor + cor_atual;
                  if(0 <= y_atual <= WINDOW_Y)
                     position += inc;
             }
@@ -299,7 +289,7 @@ void guro_face(std::pair <double, Cor> **z_buffer, index_t face)
     }
 }
 
-void scanline(std::pair <double, Cor> **z_buffer, Point *inicio, Point *fim)
+void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim)
 {
     if(fim == NULL)
         if(0 <= inicio->x <= WINDOW_X && 0 <= inicio->y <= WINDOW_Y)
@@ -308,28 +298,23 @@ void scanline(std::pair <double, Cor> **z_buffer, Point *inicio, Point *fim)
             {
                 z_buffer[(int)inicio->x][(int)inicio->y].first = inicio->z;
 
-                Cor cor(inicio->Ilr,inicio->Ilb,inicio->Ilg);
-
-                z_buffer[(int)inicio->x][(int)inicio->y].second = cor;
+                z_buffer[(int)inicio->x][(int)inicio->y].second = inicio->color;
             }
         }
     else
     {
         double deltaX = fim->x - inicio->x;
         double deltaZ = fim->z - inicio->z;
-        double deltaIR = fim->Ilr - inicio->Ilr;
-        double deltaIB = fim->Ilb - inicio->Ilb;
-        double deltaIG = fim->Ilg - inicio->Ilg;
 
-        double Tz, TiR, TiB, TiG;
-        Tz = TiR = TiB = TiG = 0;
+        double Tz;
+        Tz = 0;
+
+        TxColor txColor = {0.0,0.0,0.0};
 
         if(deltaX != 0)
         {
-            Tz = deltaZ/deltaX;
-            TiR = deltaIR/deltaX;
-            TiB = deltaIB/deltaX;
-            TiG = deltaIG/deltaX;
+            Tz = deltaZ/abs(deltaX);
+            txColor.calc(fim->color, inicio->color, deltaX);
         }
         if(inicio->x < 0)
         {
@@ -340,9 +325,7 @@ void scanline(std::pair <double, Cor> **z_buffer, Point *inicio, Point *fim)
                 double deslocamento = - inicio->x;
                 inicio->x = 0;
                 inicio->z = inicio->z + Tz*deslocamento;
-                inicio->Ilr = inicio->Ilr + TiR*deslocamento;
-                inicio->Ilb = inicio->Ilb + TiB*deslocamento;
-                inicio->Ilg = inicio->Ilg + TiG*deslocamento;
+                inicio->color =  (txColor * deslocamento) + inicio->color ;
             }
             
         }
@@ -351,30 +334,28 @@ void scanline(std::pair <double, Cor> **z_buffer, Point *inicio, Point *fim)
             double deslocamento = fim->x - WINDOW_X;
             fim->x = WINDOW_X;
             fim->z = fim->z - Tz*deslocamento;
-            fim->Ilr = fim->Ilr - TiR*deslocamento;
-            fim->Ilb = fim->Ilb - TiB*deslocamento;
-            fim->Ilg = fim->Ilg - TiG*deslocamento;
+            inicio->color =  (txColor * (-deslocamento)) + inicio->color ;
         }
         double condition = fim->x - inicio->x;
 
-        double x_atual,y , z_atual, IR, IB, IG;
+        double x_atual,y , z_atual;
+        sf::Color color;
         x_atual = inicio->x;
         y = inicio->y;
         z_atual = inicio->z;
-        IR = inicio->Ilr;
-        IB = inicio->Ilb;
-        IG = inicio->Ilg;
+        color = inicio->color;
 
-        for(int i =0; i<= condition; i++)
+        for(int i =0; i<= floor(condition); i++)
         {
             if(z_buffer[(int)x_atual][(int)y].first > z_atual)
             {
                 z_buffer[(int)x_atual][(int)y].first = z_atual;
 
-                Cor cor(IR,IB,IG);
-
-                z_buffer[(int)x_atual][(int)y].second = cor;
+                z_buffer[(int)x_atual][(int)y].second = color;
             }
+            x_atual++;
+            z_atual += Tz;
+            color = txColor + color;
         }
         delete(inicio);
         delete(fim);
