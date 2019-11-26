@@ -4,7 +4,9 @@ config::config(): mx(20),
                   my(20),
                   vmode(WIREFRAME),
                   file_name(""),
-                  file_name_texture("") { }
+                  file_name_texture(""),
+                  file_set(false),
+                  texture_set(false) { }
 
 void config::add_button(std::string asset_name, sf::Vector2f at, std::function<void(void)> callb){
     interface.push_back(new button(asset_name, at, callb));
@@ -37,4 +39,21 @@ void config::draw_overlay(sf::RenderTarget &win) const {
         t->update_text();
         win.draw(*t);
     }
+}
+
+void utils::save_mesh(config &conf){
+}
+
+void utils::load_mesh(config &conf){
+    std::FILE *f = std::fopen(conf.file_name.data(), "r");
+    if(f == nullptr){
+        conf.file_set = false;
+        return;
+    }
+    std::fclose(f);
+    conf.file_set = true;
+}
+
+void utils::load_texture(config &conf){
+    conf.texture_set = conf.texture.loadFromFile(conf.file_name_texture);
 }

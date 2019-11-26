@@ -6,6 +6,7 @@
 #include <functional>
 #include <SFML/Graphics.hpp>
 
+#include "half_mesh.hpp"
 #include "half_types.hpp"
 #include "button.hpp"
 #include "overlay.hpp"
@@ -18,22 +19,38 @@ struct config{
 
     std::string file_name;
     std::string file_name_texture;
+    std::string message_log;
 
-    std::vector<button*> interface;
+    bool file_set;
+    bool texture_set;
+
+    std::vector<button*>  interface;
     std::vector<overlay*> overlays;
 
-    sf::Font font;
+    sf::Font  font;
+    sf::Image texture;
+
+    half_mesh terrain;
 
     config();
 
     void add_button(std::string, sf::Vector2f, std::function<void(void)>);
     void click_button(sf::Vector2f) const;
+
     void draw_interface(sf::RenderTarget &) const;
 
     void load_font(std::string);
+
     void add_overlay(sf::Vector2f, std::function<std::string(void)>);
     void draw_overlay(sf::RenderTarget &) const;
 
 };
+
+namespace utils {
+    void save_mesh(config &conf);
+    void load_mesh(config &conf);
+
+    void load_texture(config &conf);
+}
 
 #endif

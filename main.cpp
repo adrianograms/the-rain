@@ -13,21 +13,10 @@
 #define WIN_Y 768
 #define WIN_X 1337
 
-#define DOLOG
-#ifdef DOLOG
-#define LOG(s) do{                                                  \
-        auto t = time(NULL);                                        \
-        std::cout << std::ctime(&t) << "::" << (s) << std::endl;    \
-            }while(false);
-#else
-#define LOG(s)
-#endif
-
 struct light{
     std::string x;
     std::string y;
     std::string z;
-    // demais coisas da luz
 
     light(): x("0"), y("0"), z("0") {}
 };
@@ -88,23 +77,23 @@ int main(){
     };
 
     auto draw_height_map = [&height, &conf](){
-        sf::Texture texture;
-        sf::Sprite  sprite;
-        sf::Image   buffer;
-        buffer.create(conf.my, conf.mx);
+        sf::Texture t;
+        sf::Sprite  s;
+        sf::Image   b;
+        b.create(conf.my, conf.mx);
 
         for(uint64_t i = 0; i < conf.my; i++){
             for(uint64_t j = 0; j < conf.mx; j++){
                 auto c = palett[(uint64_t)((height[i][j] / 256.0) * palett.size())];
-                buffer.setPixel(i, j, c);
+                b.setPixel(i, j, c);
             }
         }
 
-        texture.loadFromImage(buffer);
-        sprite.setTexture(texture);
-        sprite.setPosition({(float)WIN_X - conf.my, 0});
+        t.loadFromImage(b);
+        s.setTexture(t);
+        s.setPosition({(float)WIN_X - conf.my, 0});
 
-        win.draw(sprite);
+        win.draw(s);
     };
 
 
@@ -164,7 +153,7 @@ int main(){
                         if(a == 8 && to.size() != 0){
                             to.pop_back();
                         }
-                        else{
+                        else if(a == 46 || (a >= 48 && a <= 57)){
                             to += a;
                         }
 
@@ -178,65 +167,70 @@ int main(){
         }
     };
 
-// buttons
+    // buttons
     conf.add_button("assets/button_save.png", {20, 20}, [&read_input, &conf](){
         read_input(conf.file_name);
-        LOG("Save pressed");
     });
     conf.add_button("assets/button_texture.png", {20, 60}, [&read_input, &conf](){
         read_input(conf.file_name_texture);
-        LOG("Load pressed");
+        utils::load_texture(conf);
+        if(!conf.texture_set){
+            conf.message_log = "fail to load texture: " + conf.file_name_texture;
+            conf.file_name_texture = "";
+        }
     });
-    conf.add_button("assets/button_load.png", {20, 100}, [](){
-        LOG("Load texture pressed");
+    conf.add_button("assets/button_load.png", {20, 100}, [&read_input, &conf](){
+        read_input(conf.file_name);
+        utils::load_mesh(conf);
+        if(!conf.file_set){
+            conf.message_log = "fail to load file: " + conf.file_name;
+            conf.file_name_texture = "";
+        }
     });
     conf.add_button("assets/button_wire.png", {20, WIN_Y - 50}, [&conf](){
         conf.vmode = WIREFRAME;
-        LOG("Wireframe mode");
     });
     conf.add_button("assets/button_flat.png", {20, WIN_Y - 90}, [&conf](){
         conf.vmode = FLAT;
-        LOG("Flat shading mode");
     });
     conf.add_button("assets/button_gouraud.png", {20, WIN_Y - 130}, [&conf](){
         conf.vmode = GOURAUD;
-        LOG("Gouraud shading mode");
     });
     conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 90}, [&terrain_update_size, &conf](){
         terrain_update_size(conf.mx, ++conf.my);
-        LOG("Terrain mx++")
     });
     conf.add_button("assets/button_minus.png", {WIN_X - 300, WIN_Y - 90}, [&terrain_update_size, &conf](){
         terrain_update_size(conf.mx, conf.my == 2 ? 2 : --conf.my);
-        LOG("Terrain mx--")
     });
     conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
         terrain_update_size(++conf.mx, conf.my);
-        LOG("Terrain my++")
     });
     conf.add_button("assets/button_minus.png", {WIN_X - 300, WIN_Y - 50}, [&terrain_update_size, &conf](){
         terrain_update_size(conf.mx == 2 ? 2 : --conf.mx, conf.my);
-        LOG("Terrain my--")
     });
     conf.add_button("assets/button_smoth.png", {WIN_X - 120, WIN_Y - 50}, [&height](){
         height.smooth();
-        LOG("Height smoth");
     });
     conf.add_button("assets/button_generate.png", {WIN_X - 120, WIN_Y - 90}, [&height](){
         height.gen(std::time(NULL));
-        LOG("Height genenete");
     });
-    conf.add_button("assets/button_x.png", {140, WIN_Y - 130}, [&read_input, &lpoint](){
-        read_input(lpoint.x);
-        LOG("Camera x");
+    conf.add_button("assets/button_x.png", {140, WIN_Y - 130}, [&read_input_number, &lpoint](){
+        read_input_number(lpoint.x);
+        if(lpoint.x == ""){
+            lpoint.x = "0";
+        }
     });
-    conf.add_button("assets/button_y.png", {140, WIN_Y - 90}, [&read_input, &lpoint](){
-        read_input(lpoint.y);
-        LOG("Camera y");
+    conf.add_button("assets/button_y.png", {140, WIN_Y - 90}, [&read_input_number, &lpoint](){
+        read_input_number(lpoint.y);
+        if(lpoint.y == ""){
+            lpoint.y = "0";
+        }
     });
-    conf.add_button("assets/button_z.png", {140, WIN_Y - 50}, [&read_input, &lpoint](){
-        read_input(lpoint.z);
-        LOG("Camera z");
+    conf.add_button("assets/button_z.png", {140, WIN_Y - 50}, [&read_input_number, &lpoint](){
+        read_input_number(lpoint.z);
+        if(lpoint.z == ""){
+            lpoint.z = "0";
+        }
     });
     // overlays
     conf.add_overlay({WIN_X - 230, WIN_Y - 85}, [&conf]() -> std::string {
@@ -253,13 +247,13 @@ int main(){
     });
     conf.add_overlay({20, WIN_Y - 150}, [&conf]() -> std::string {
         static std::string curr_mode[3] = {"Wireframe", "Flat", "Gouraud"};
-        return "> " + curr_mode[conf.vmode];
+        return "-> " + curr_mode[conf.vmode];
     });
     conf.add_overlay({125, 25}, [&conf]() -> std::string {
-        return conf.file_name == "" ? "> No save file" : conf.file_name;
+        return conf.file_name == "" ? "-> No save file" : conf.file_name;
     });
     conf.add_overlay({125, 65}, [&conf]() -> std::string {
-        return conf.file_name_texture == "" ? "> No texture" : conf.file_name_texture;
+        return conf.file_name_texture == "" ? "-> No texture" : conf.file_name_texture;
     });
     conf.add_overlay({175, WIN_Y - 125}, [&lpoint]() -> std::string {
         return lpoint.x;
@@ -273,19 +267,22 @@ int main(){
     conf.add_overlay({140, WIN_Y - 150}, []() -> std::string {
         return "Light position:";
     });
+    conf.add_overlay({20, WIN_Y / 2}, [&conf]() -> std::string {
+        return conf.message_log;
+    });
 
     terrain.build_mesh(conf.mx, conf.my, zmap);
     while(win.isOpen()){
 
-        sf::Event ev;
+        sf::Event event;
 
-        while(win.pollEvent(ev)){
-            switch(ev.type){
+        while(win.pollEvent(event)){
+            switch(event.type){
             case sf::Event::Closed:
                 win.close();
                 break;
             case sf::Event::KeyPressed:
-                switch(ev.key.code){
+                switch(event.key.code){
                 case sf::Keyboard::A:
                     // pan esquerda
                     break;
@@ -352,9 +349,9 @@ int main(){
                 }
                 break;
             case sf::Event::MouseButtonPressed:
-                switch(ev.mouseButton.button){
+                switch(event.mouseButton.button){
                 case sf::Mouse::Left:
-                    conf.click_button({(float)ev.mouseButton.x, (float)ev.mouseButton.y});
+                    conf.click_button({(float)event.mouseButton.x, (float)event.mouseButton.y});
                     break;
                 default:
                     break;
@@ -370,7 +367,6 @@ int main(){
         // std::vector<vec3f> srt_points = apply_transf(terrain, visible_faces, cam.get_proj_mat(curr_view));
 
         // void draw(terrain, srt_points, visible_faces);
-
         // ignorem isso, vou mudar
         win.clear();
 
@@ -391,6 +387,17 @@ int main(){
             lines[1].color = sf::Color::Blue;
 
             win.draw(lines);
+        }
+
+        if(conf.texture_set){
+            sf::Texture t;
+            sf::Sprite  s;
+
+            t.loadFromImage(conf.texture);
+            s.setTexture(t);
+
+            s.setPosition({500, 500});
+            win.draw(s);
         }
 
         draw_height_map();
