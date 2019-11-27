@@ -42,8 +42,6 @@ typedef struct txColor
 
 }TxColor;
 
-sf::Image imagem;
-
 typedef struct Point
 {
     index_t vertex;
@@ -57,69 +55,31 @@ typedef struct Point
 
 };
 
+// --------------------------------------------------------------------------------------------------------------------
+// Variaveis Globais
+// --------------------------------------------------------------------------------------------------------------------
+
+sf::Image imagem;
 double Ila, Kd, ka, Ks, lpoint, n;
 sf::Color background, line;
 std::vector<vec3f> vertexes;
 half_mesh terrain;
 vec3f L, VRP;
 
+// Aplica o brilho nas cores
 void apply_light(sf::Color &cor, double Il)
 {
-    cor.r = cor.r * Il;
-    cor.b = cor.b * Il;
-    cor.g = cor.g * Il;
+    cor.r = cor.r * (Il/255);
+    cor.b = cor.b * (Il/255);
+    cor.g = cor.g * (Il/255);
 }
 
+//Pega a cor do vertex
 sf::Color getColor(index_t vertex) { return imagem.getPixel(vertex%WINDOW_X, vertex/WINDOW_X);}
 
 void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim);
 
-std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
-{
-    double Iambiente = Ila*ka;
-    std::vector<double> result;
-
-    for(int i = 0; i < pontos.size(); i++)
-    {
-        std::vector<index_t> faces = terrain.get_vertex_faces(pontos[i]);
-        vec3f normal(0.0,0.0,0.0);
-        for(int j =0; j< faces.size(); j++)
-        {
-            normal += terrain.get_face_normal(faces[i]);
-        }
-        normal.normlize();
-        vec3f lVertice = L - vertexes[pontos[i]];
-        lVertice.normlize();
-        float product = normal.dot(lVertice);
-
-        double Id = 0;
-        double Is = 0;
-
-        if(product > 0) 
-        {
-            Id = lpoint * Kd * product;
-
-            vec3f rVertice = ((normal) * ((lVertice*2.0).dot(normal))) - lVertice;
-            rVertice.normlize();
-
-            vec3f sVertice = VRP - vertexes[pontos[i]];
-            sVertice.normlize();
-
-            double product2 = rVertice.dot(sVertice);
-
-            if(product2 > 0)
-                Is = lpoint * Ks * pow(product2,n);
-        }
-
-        double It = Iambiente + Id + Is;
-
-        result.push_back(It);
-    }
-
-    return result;
-}
-
-    Point **criar_vetor(std::vector<index_t> &pontos, index_t &index, bool &out_of_bounds, int &tam) {
+Point **criar_vetor(std::vector<index_t> &pontos, index_t &index, bool &out_of_bounds, int &tam) {
     int maior, menor;
     maior = menor = vertexes[pontos[0]].y;
     // Descobre o maior entre os vertices
@@ -169,6 +129,145 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
         tam = tamanho;
         return vetor;
     }
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+// Guro
+// --------------------------------------------------------------------------------------------------------------------------
+
+
+std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
+{
+    double Iambiente = Ila*ka;
+    std::vector<double> result;
+
+    for(int i = 0; i < pontos.size(); i++)
+    {
+        std::vector<index_t> faces = terrain.get_vertex_faces(pontos[i]);
+        vec3f normal(0.0,0.0,0.0);
+        for(int j =0; j< faces.size(); j++)
+        {
+            normal += terrain.get_face_normal(faces[i]);
+        }
+        normal.normlize();
+        vec3f lVertice = L - vertexes[pontos[i]];
+        lVertice.normlize();
+        float product = normal.dot(lVertice);
+
+        double Id = 0;
+        double Is = 0;
+
+        if(product > 0) 
+        {
+            Id = lpoint * Kd * product;
+
+            vec3f rVertice = ((normal) * ((lVertice*2.0).dot(normal))) - lVertice;
+            rVertice.normlize();
+
+            vec3f sVertice = VRP - vertexes[pontos[i]];
+            sVertice.normlize();
+
+            double product2 = rVertice.dot(sVertice);
+
+            if(product2 > 0)
+                Is = lpoint * Ks * pow(product2,n);
+        }
+
+        double It = Iambiente + Id + Is;
+
+        result.push_back(It);
+    }
+
+    return result;
+}
+
+void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim)
+{
+    // Se fim não existe então é necessario apenas pintar um pixel
+    if(fim == NULL)
+    {
+        //Porem o vertice pode estar fora das fronteiras
+        if(0 <= inicio->x < WINDOW_X && 0 <= inicio->y < WINDOW_Y)
+        {
+            if(z_buffer[(int)inicio->x][(int)inicio->y].first > inicio->z)
+            {
+                z_buffer[(int)inicio->x][(int)inicio->y].first = inicio->z;
+
+                z_buffer[(int)inicio->x][(int)inicio->y].second = inicio->color;
+            }
+        }
+    }
+    else
+    {
+
+        //Calcula delta
+        double deltaX = fim->x - inicio->x;
+        double deltaZ = fim->z - inicio->z;
+
+        double Tz;
+        Tz = 0;
+
+        TxColor txColor = {0.0,0.0,0.0};
+
+        if(deltaX != 0)
+        {
+            //Calcula taxa
+            Tz = deltaZ/abs(deltaX);
+            txColor.calc(fim->color, inicio->color, deltaX);
+        }
+        //Corta a scanline caso ela passe da janela
+        if(inicio->x < 0)
+        {
+            //Se os dois estão fora tanto o inicio quanto o fim da scanline não faz nada
+            if(fim->x < 0)
+                return;
+            else
+            {
+                double deslocamento = (- inicio->x);
+                inicio->x = 0;
+                inicio->z = inicio->z + Tz*deslocamento;
+                inicio->color =  (txColor * deslocamento) + inicio->color ;
+            }
+            
+        }
+        // Se o fim do vetor estiver fora ele "recorta"
+        if(fim->x >= WINDOW_X)
+        {
+            double deslocamento = fim->x - (WINDOW_X-1);
+            fim->x = WINDOW_X;
+            fim->z = fim->z - Tz*deslocamento;
+            inicio->color =  (txColor * (-deslocamento)) + inicio->color ;
+        }
+        // Anda por todo os x's da scanline
+        double condition = fim->x - inicio->x;
+
+        //Seta os valores iniciais da scanline que são os valores do primeiro vertice da scanline
+        double x_atual,y , z_atual;
+        sf::Color color;
+        x_atual = inicio->x;
+        y = inicio->y;
+        z_atual = inicio->z;
+        color = inicio->color;
+
+        for(int i =0; i<= floor(condition); i++)
+        {
+            // Se o Z da scanline for maior ele atualiza a cor dele
+            if(z_buffer[(int)x_atual][(int)y].first > z_atual)
+            {
+                z_buffer[(int)x_atual][(int)y].first = z_atual;
+
+                z_buffer[(int)x_atual][(int)y].second = color;
+            }
+            // Incrementa os valores para continuar andando pela scanline
+            x_atual++;
+            z_atual += Tz;
+            color = txColor + color;
+        }
+        //deleta os point's para limpar memoria
+        delete(inicio);
+        delete(fim);
+    }
+    
 }
 
 void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face) 
@@ -326,6 +425,10 @@ void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face)
     delete[] vetor;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+// flat shading
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 sf::Color avg_color(sf::Color cor1, sf::Color cor2, sf::Color cor3)
 {
     int r = (cor1.r + cor2.r + cor3.r)/3;
@@ -412,10 +515,6 @@ double calc_ilumination_flat(std::vector<index_t> &indexes, index_t face)
         return IlAmbiente + Id + Is;
     }
 }
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-// flat shading
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void scanline_flat(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim)
 {
@@ -872,96 +971,6 @@ void wire_frame_face(std::pair <double, sf::Color> **z_buffer, index_t face)
     }
 
     delete[] vetor;
-}
-
-void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim)
-{
-    // Se fim não existe então é necessario apenas pintar um pixel
-    if(fim == NULL)
-    {
-        //Porem o vertice pode estar fora das fronteiras
-        if(0 <= inicio->x < WINDOW_X && 0 <= inicio->y < WINDOW_Y)
-        {
-            if(z_buffer[(int)inicio->x][(int)inicio->y].first > inicio->z)
-            {
-                z_buffer[(int)inicio->x][(int)inicio->y].first = inicio->z;
-
-                z_buffer[(int)inicio->x][(int)inicio->y].second = inicio->color;
-            }
-        }
-    }
-    else
-    {
-
-        //Calcula delta
-        double deltaX = fim->x - inicio->x;
-        double deltaZ = fim->z - inicio->z;
-
-        double Tz;
-        Tz = 0;
-
-        TxColor txColor = {0.0,0.0,0.0};
-
-        if(deltaX != 0)
-        {
-            //Calcula taxa
-            Tz = deltaZ/abs(deltaX);
-            txColor.calc(fim->color, inicio->color, deltaX);
-        }
-        //Corta a scanline caso ela passe da janela
-        if(inicio->x < 0)
-        {
-            //Se os dois estão fora tanto o inicio quanto o fim da scanline não faz nada
-            if(fim->x < 0)
-                return;
-            else
-            {
-                double deslocamento = (- inicio->x);
-                inicio->x = 0;
-                inicio->z = inicio->z + Tz*deslocamento;
-                inicio->color =  (txColor * deslocamento) + inicio->color ;
-            }
-            
-        }
-        // Se o fim do vetor estiver fora ele "recorta"
-        if(fim->x >= WINDOW_X)
-        {
-            double deslocamento = fim->x - (WINDOW_X-1);
-            fim->x = WINDOW_X;
-            fim->z = fim->z - Tz*deslocamento;
-            inicio->color =  (txColor * (-deslocamento)) + inicio->color ;
-        }
-        // Anda por todo os x's da scanline
-        double condition = fim->x - inicio->x;
-
-        //Seta os valores iniciais da scanline que são os valores do primeiro vertice da scanline
-        double x_atual,y , z_atual;
-        sf::Color color;
-        x_atual = inicio->x;
-        y = inicio->y;
-        z_atual = inicio->z;
-        color = inicio->color;
-
-        for(int i =0; i<= floor(condition); i++)
-        {
-            // Se o Z da scanline for maior ele atualiza a cor dele
-            if(z_buffer[(int)x_atual][(int)y].first > z_atual)
-            {
-                z_buffer[(int)x_atual][(int)y].first = z_atual;
-
-                z_buffer[(int)x_atual][(int)y].second = color;
-            }
-            // Incrementa os valores para continuar andando pela scanline
-            x_atual++;
-            z_atual += Tz;
-            color = txColor + color;
-        }
-        //deleta os point's para limpar memoria
-        delete(inicio);
-        delete(fim);
-    }
-    
-
 }
 
 
