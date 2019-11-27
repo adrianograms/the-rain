@@ -18,7 +18,13 @@ struct light{
     std::string y;
     std::string z;
 
-    light(): x("0"), y("0"), z("0") {}
+    double LA;
+
+    double KA;
+    double KD;
+    double KS;
+
+    light(): x("0"), y("0"), z("0"), LA(20), KA(20), KD(20), KS(20) {}
 };
 
 // TODO list:
@@ -95,7 +101,6 @@ int main(){
 
         win.draw(s);
     };
-
 
     conf.load_font("assets/OpenSans-Regular.ttf");
 
@@ -175,7 +180,7 @@ int main(){
         read_input(conf.file_name_texture);
         utils::load_texture(conf);
         if(!conf.texture_set){
-            conf.message_log = "fail to load texture: " + conf.file_name_texture;
+            conf.message_log = "Fail to load texture: " + conf.file_name_texture;
             conf.file_name_texture = "";
         }
     });
@@ -183,7 +188,7 @@ int main(){
         read_input(conf.file_name);
         utils::load_mesh(conf);
         if(!conf.file_set){
-            conf.message_log = "fail to load file: " + conf.file_name;
+            conf.message_log = "Fail to load file: " + conf.file_name;
             conf.file_name_texture = "";
         }
     });
@@ -232,6 +237,34 @@ int main(){
             lpoint.z = "0";
         }
     });
+
+    conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+    conf.add_button("assets/button_minus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+    conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+    conf.add_button("assets/button_minus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+    conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+    conf.add_button("assets/button_minus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+    conf.add_button("assets/button_plus.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+    conf.add_button("assets/button_minux.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
+        terrain_update_size(++conf.mx, conf.my);
+    });
+
+
+
     // overlays
     conf.add_overlay({WIN_X - 230, WIN_Y - 85}, [&conf]() -> std::string {
         return "X: " + std::to_string(conf.my);
@@ -270,6 +303,19 @@ int main(){
     conf.add_overlay({20, WIN_Y / 2}, [&conf]() -> std::string {
         return conf.message_log;
     });
+    conf.add_overlay({400, WIN_Y - 30}, [&lpoint]() -> std::string {
+        return "LA: " + std::to_string(lpoint.LA);
+    });
+    conf.add_overlay({400, WIN_Y - 50}, [&lpoint]() -> std::string {
+        return "KA: " + std::to_string(lpoint.KA);
+    });
+    conf.add_overlay({400, WIN_Y - 70}, [&lpoint]() -> std::string {
+        return "KD: " + std::to_string(lpoint.KD);
+    });
+    conf.add_overlay({400, WIN_Y - 90}, [&lpoint]() -> std::string {
+        return "KS: " + std::to_string(lpoint.KS);
+    });
+
 
     terrain.build_mesh(conf.mx, conf.my, zmap);
     while(win.isOpen()){
@@ -326,25 +372,6 @@ int main(){
                     // camera para cima
                     break;
                 default:
-                    // referência de como fazer algumas coisas
-                    // pontos de uma face
-                    // for(auto face : terrain.face_vector){
-                    //     std::cout << "face -> " << "half_edge ->  "<< face << std::endl;
-                    //     auto vertexes = terrain.get_face_vertexes(face);
-
-                    //     for(auto vertex : vertexes){
-                    //         auto p = terrain.points[vertex];
-                    //         std::cout << "\t" << p.x << "," << p.y << "," << p.z << std::endl;
-                    //     }
-                    // }
-                    // // normal da face
-                    // for(index_t i = 0; i < (index_t)terrain.face_vector.size(); i++){
-                    //     vec3f normal = terrain.get_face_normal(i);
-                    //     std::cout << "normal da face: " << i << " "
-                    //               << "(" << normal.x << ","
-                    //               << normal.y << ","
-                    //               << normal.z << ")" << std::endl;
-                    // }
                     break;
                 }
                 break;
@@ -377,7 +404,6 @@ int main(){
             auto srt = terrain.points[dir.first];
             auto end = terrain.points[dir.second];
 
-            // just for testing
             lines[0].position.x = (srt.x + 10) * 10;
             lines[0].position.y = (srt.y + 10) * 10;
             lines[0].color = sf::Color::Green;

@@ -42,6 +42,7 @@ void config::draw_overlay(sf::RenderTarget &win) const {
 }
 
 void utils::save_mesh(config &conf){
+    // TODO: finish
 }
 
 void utils::load_mesh(config &conf){
@@ -50,6 +51,7 @@ void utils::load_mesh(config &conf){
         conf.file_set = false;
         return;
     }
+    // TODO: fisnish
     std::fclose(f);
     conf.file_set = true;
 }
