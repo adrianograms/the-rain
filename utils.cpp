@@ -1,7 +1,7 @@
 #include "include/utils.hpp"
 
-config::config(): mx(100),
-                  my(100),
+config::config(): mx(2),
+                  my(2),
                   hmax(32),
                   vmode(WIREFRAME),
                   file_name(""),

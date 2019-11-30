@@ -20,7 +20,6 @@ class half_mesh{
     void _gen_objects(std::vector<half::triangle> &, std::vector<half::edge> &, uint64_t, uint64_t);
     void _update_normals();
 
-public:
     // basic extructure of each face
     //                              <---- half edge from 3 to 1
     //
@@ -49,9 +48,9 @@ public:
     // |/        |
     // 3---------4
 
-
     std::vector<half_edge> half_vector;
 
+public:
     std::vector<index_t> vertex_vector;
     std::vector<index_t> face_vector;
     std::vector<index_t> edge_vector;

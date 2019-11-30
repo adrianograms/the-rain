@@ -67,6 +67,7 @@ public:
     float bhaskaraZ( float a, float b, float c );
 
     vec3f getn();
+    vec3f getvrp();
 };
 
 #endif

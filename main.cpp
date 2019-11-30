@@ -1,19 +1,15 @@
-#include <iostream>
-#include <ctime>
-
-#include <SFML/Graphics.hpp>
-
 #include "include/button.hpp"
 #include "include/noise.hpp"
 #include "include/half_mesh.hpp"
 #include "include/pipeline.hpp"
 #include "include/vec3f.hpp"
 #include "include/utils.hpp"
+#include "include/shading.hpp"
+
+#include <limits>
 
 #define WIN_Y 768
 #define WIN_X 1337
-
-;
 
 const std::vector<sf::Color> palett = {{ 30,   0, 255},
                                        { 12,  60, 232},
@@ -38,7 +34,6 @@ int main(){
 
     config    conf;
     noise     height(conf.mx, conf.my);
-    half_mesh terrain;
     light     lpoint;
     Pipeline  camera;
 
@@ -52,18 +47,18 @@ int main(){
         return vec3f((float)i, (float)height[i][j]/(float)conf.hmax, (float)j);
     };
 
-    auto hmax_update = [&conf, &terrain, &zmap](uint64_t i){
+    auto hmax_update = [&conf, &zmap](uint64_t i){
         conf.hmax = i;
-        terrain.update_mesh_z(zmap);
+        conf.terrain.update_mesh_z(zmap);
     };
 
-    auto terrain_update_size = [&terrain, &height, &conf, &zmap](uint64_t x, uint64_t y){
+    auto terrain_update_size = [&height, &conf, &zmap](uint64_t x, uint64_t y){
         conf.mx = x;
         conf.my = y;
         height.update(conf.mx, conf.my);
         height.gen(std::time(NULL));
-        terrain.clear_mesh();
-        terrain.build_mesh(conf.mx, conf.my, zmap);
+        conf.terrain.clear_mesh();
+        conf.terrain.build_mesh(conf.mx, conf.my, zmap);
     };
 
     auto draw_ui = [&conf](){
@@ -203,9 +198,9 @@ int main(){
     conf.add_button("assets/button_minus.png", {WIN_X - 300, WIN_Y - 50}, [&terrain_update_size, &conf](){
         terrain_update_size(conf.mx == 2 ? 2 : --conf.mx, conf.my);
     });
-    conf.add_button("assets/button_smoth.png", {WIN_X - 120, WIN_Y - 50}, [&height, &terrain, &zmap](){
+    conf.add_button("assets/button_smoth.png", {WIN_X - 120, WIN_Y - 50}, [&height, &conf, &zmap](){
         height.smooth();
-        terrain.update_mesh_z(zmap);
+        conf.terrain.update_mesh_z(zmap);
 
     });
     conf.add_button("assets/button_minus.png", {WIN_X - 435, WIN_Y - 50}, [&hmax_update, &conf](){
@@ -214,9 +209,9 @@ int main(){
     conf.add_button("assets/button_plus.png", {WIN_X - 400, WIN_Y - 50}, [&hmax_update, &conf](){
         hmax_update(conf.hmax == 255 ? 255 : ++conf.hmax);
     });
-    conf.add_button("assets/button_generate.png", {WIN_X - 120, WIN_Y - 90}, [&height, &terrain, &zmap](){
+    conf.add_button("assets/button_generate.png", {WIN_X - 120, WIN_Y - 90}, [&height, &conf, &zmap](){
         height.gen(std::time(NULL));
-        terrain.update_mesh_z(zmap);
+        conf.terrain.update_mesh_z(zmap);
     });
     conf.add_button("assets/button_x.png", {140, WIN_Y - 130}, [&read_input_number, &lpoint](){
         read_input_number(lpoint.x);
@@ -316,8 +311,7 @@ int main(){
         return std::to_string(conf.hmax);
     });
 
-
-    terrain.build_mesh(conf.mx, conf.my, zmap);
+    conf.terrain.build_mesh(conf.mx, conf.my, zmap);
     while(win.isOpen()){
 
         sf::Event event;
@@ -401,28 +395,73 @@ int main(){
             }
         }
 
-        auto visible_faces = filter_normal(terrain, camera.getn());
-        auto src_points = apply_pipeline(camera.getMatrix(), terrain.points);
+        auto visible_faces = filter_normal(conf.terrain, camera.getn());
+        auto src_points = apply_pipeline(camera.getMatrix(), conf.terrain.points);
 
         win.clear();
 
-        for(index_t i : terrain.edge_vector){
-            sf::VertexArray lines(sf::Lines, 2);
-            std::pair<index_t, index_t> dir = terrain.half_direction(i);
+        {
+            // isso é so pra desenhar a image na tela
+            sf::Texture t;
+            sf::Sprite  s;
+            sf::Image   im;
 
-            auto srt = src_points[dir.first];
-            auto end = src_points[dir.second];
+            lpoint.pos = vec3f(50, 50, -50);
 
-            lines[0].position.x = srt.x;
-            lines[0].position.y = srt.y;
-            lines[0].color = sf::Color::Green;
+            std::pair<double, sf::Color> **zbuff;
 
-            lines[1].position.x = end.x;
-            lines[1].position.y = end.y;
-            lines[1].color = sf::Color::Blue;
+            zbuff = new std::pair<double, sf::Color>*[WIN_X];
 
-            win.draw(lines);
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                zbuff[i] = new std::pair<double, sf::Color>[WIN_X];
+            }
+
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                for(uint64_t j = 0; j < WIN_X; j++){
+                    zbuff[i][j].first = std::numeric_limits<double>::max();
+                    zbuff[i][j].second = sf::Color::Black;
+                }
+            }
+
+            for(auto f : visible_faces){
+                flat_shading_face(zbuff, f, conf, lpoint, camera.getvrp());
+            }
+
+            im.create(WIN_X, WIN_Y);
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                for(uint64_t j = 0; j < WIN_X; j++){
+                    im.setPixel(i, j, zbuff[j][i].second);
+                }
+            }
+
+
+            t.loadFromImage(im);
+            s.setTexture(t);
+            win.draw(s);
+
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                delete [] zbuff[i];
+            }
+            delete [] zbuff;
         }
+
+        // for(index_t i : terrain.edge_vector){
+        //     sf::VertexArray lines(sf::Lines, 2);
+        //     std::pair<index_t, index_t> dir = terrain.half_direction(i);
+
+        //     auto srt = src_points[dir.first];
+        //     auto end = src_points[dir.second];
+
+        //     lines[0].position.x = srt.x;
+        //     lines[0].position.y = srt.y;
+        //     lines[0].color = sf::Color::Green;
+
+        //     lines[1].position.x = end.x;
+        //     lines[1].position.y = end.y;
+        //     lines[1].color = sf::Color::Blue;
+
+        //     win.draw(lines);
+        // }
 
         if(conf.texture_set){
             sf::Texture t;

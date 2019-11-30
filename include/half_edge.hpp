@@ -3,9 +3,7 @@
 
 #include "half_types.hpp"
 
-class half_edge{
-    // all public for now
-public:
+struct half_edge{
     // index into the half_vector
     index_t next;
     // index into the half_vector
