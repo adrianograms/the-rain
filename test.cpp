@@ -150,7 +150,7 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
             normal += terrain.get_face_normal(faces[i]);
         }
         normal.normlize();
-        vec3f lVertice = L - vertexes[pontos[i]];
+        vec3f lVertice = L - terrain.points[pontos[i]]; // Pontos no SRU
         lVertice.normlize();
         float product = normal.dot(lVertice);
 
@@ -164,7 +164,7 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos)
             vec3f rVertice = ((normal) * ((lVertice*2.0).dot(normal))) - lVertice;
             rVertice.normlize();
 
-            vec3f sVertice = VRP - vertexes[pontos[i]];
+            vec3f sVertice = VRP - terrain.points[pontos[i]];
             sVertice.normlize();
 
             double product2 = rVertice.dot(sVertice);
@@ -442,39 +442,39 @@ sf::Color avg_color(sf::Color cor1, sf::Color cor2, sf::Color cor3)
 double calc_ilumination_flat(std::vector<index_t> &indexes, index_t face)
 {
     double x_bigger, y_bigger, z_bigger, x_smaller, y_smaller, z_smaller;
-    x_bigger = x_smaller = vertexes[indexes[0]].x;
-    y_bigger = y_smaller = vertexes[indexes[0]].y;
-    z_bigger = z_smaller = vertexes[indexes[0]].z;
+    x_bigger = x_smaller = terrain.points[indexes[0]].x;
+    y_bigger = y_smaller = terrain.points[indexes[0]].y;
+    z_bigger = z_smaller = terrain.points[indexes[0]].z;
     for(int i = 1; i < indexes.size(); i++)
     {
         //Maior e menor x
-        if(x_bigger < vertexes[indexes[i]].x)
+        if(x_bigger < terrain.points[indexes[i]].x)
         {
-            x_bigger = vertexes[indexes[i]].x;
+            x_bigger = terrain.points[indexes[i]].x;
         }
-        else if(x_smaller > vertexes[indexes[i]].x)
+        else if(x_smaller > terrain.points[indexes[i]].x)
         {
-            x_smaller = vertexes[indexes[i]].x;
+            x_smaller = terrain.points[indexes[i]].x;
         }
 
         //Maior e menor y
-        if(y_bigger < vertexes[indexes[i]].y)
+        if(y_bigger < terrain.points[indexes[i]].y)
         {
-            y_bigger = vertexes[indexes[i]].y;
+            y_bigger = terrain.points[indexes[i]].y;
         }
-        else if(y_smaller > vertexes[indexes[i]].y)
+        else if(y_smaller > terrain.points[indexes[i]].y)
         {
-            y_smaller = vertexes[indexes[i]].y;
+            y_smaller = terrain.points[indexes[i]].y;
         }
 
         //Maior e menor z
-        if(z_bigger < vertexes[indexes[i]].z)
+        if(z_bigger < terrain.points[indexes[i]].z)
         {
-            z_bigger = vertexes[indexes[i]].z;
+            z_bigger = terrain.points[indexes[i]].z;
         }
-        else if(z_smaller > vertexes[indexes[i]].z)
+        else if(z_smaller > terrain.points[indexes[i]].z)
         {
-            z_smaller = vertexes[indexes[i]].z;
+            z_smaller = terrain.points[indexes[i]].z;
         }
     }
 
