@@ -4,17 +4,18 @@
 #include <SFML/Graphics.hpp>
 #include "half_mesh.hpp"
 
-#include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
-#include <gtx/string_cast.hpp>
-#include <gtx/transform.hpp>
-#include <gtc/type_ptr.hpp>
-#include <gtx/norm.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/norm.hpp>
 
 struct Point;
 // return as faces por index que sao visiveis
 // n é o vetor n da câmera
 std::vector<index_t> filter_normal(const half_mesh &terrain, vec3f n);
+std::vector<vec3f> apply_pipeline(float **, std::vector<vec3f> &);
 
 void guro_face(std::pair <double, sf::Color> **z_buffer, index_t face);
 

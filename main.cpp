@@ -59,12 +59,16 @@ int main(){
     noise     height(conf.mx, conf.my);
     half_mesh terrain;
     light     lpoint;
+    Pipeline  camera;
+
+    camera.setMatrixJP(-100.0, 100.0, -100.0, 100.0, 0, WIN_X, 0, WIN_Y);
+    camera.setMatrixSRC({0, 10, 30}, {0, 0, 0});
 
     auto zmap = [&height, &conf](index_t index) -> vec3f {
         uint64_t i = index / conf.mx;
         uint64_t j = index % conf.mx;
 
-        return vec3f((float)i, (float)j, (float)height[i][j]);
+        return vec3f((float)i, (float)height[i][j]/16.0, (float)j);
     };
 
     auto terrain_update_size = [&terrain, &height, &conf, &zmap](uint64_t x, uint64_t y){
@@ -213,11 +217,14 @@ int main(){
     conf.add_button("assets/button_minus.png", {WIN_X - 300, WIN_Y - 50}, [&terrain_update_size, &conf](){
         terrain_update_size(conf.mx == 2 ? 2 : --conf.mx, conf.my);
     });
-    conf.add_button("assets/button_smoth.png", {WIN_X - 120, WIN_Y - 50}, [&height](){
+    conf.add_button("assets/button_smoth.png", {WIN_X - 120, WIN_Y - 50}, [&height, &terrain, &zmap](){
         height.smooth();
+        terrain.update_mesh_z(zmap);
+
     });
-    conf.add_button("assets/button_generate.png", {WIN_X - 120, WIN_Y - 90}, [&height](){
+    conf.add_button("assets/button_generate.png", {WIN_X - 120, WIN_Y - 90}, [&height, &terrain, &zmap](){
         height.gen(std::time(NULL));
+        terrain.update_mesh_z(zmap);
     });
     conf.add_button("assets/button_x.png", {140, WIN_Y - 130}, [&read_input_number, &lpoint](){
         read_input_number(lpoint.x);
@@ -331,45 +338,58 @@ int main(){
                 switch(event.key.code){
                 case sf::Keyboard::A:
                     // pan esquerda
+                    camera.FOCAL_VRP_LEFT();
                     break;
                 case sf::Keyboard::S:
                     // pan direita
+                    camera.FOCAL_VRP_RIGHT();
                     break;
                 case sf::Keyboard::Q:
                     // pan cima
+                    camera.FOCAL_VRP_UP();
                     break;
                 case sf::Keyboard::W:
                     // pan baixo
+                    camera.FOCAL_VRP_DOWN();
                     break;
                 case sf::Keyboard::Z:
                     // aumenta o fov
+
                     break;
                 case sf::Keyboard::X:
                     // diminui o fov
                     break;
                 case sf::Keyboard::D:
                     // ponto focal esquerda
+                    camera.FOCAL_LEFT();
                     break;
                 case sf::Keyboard::F:
                     // ponto focal direita
+                    camera.FOCAL_RIGHT();
                     break;
                 case sf::Keyboard::E:
                     // ponto focal para baixo
+                    camera.FOCAL_DOWN();
                     break;
                 case sf::Keyboard::R:
                     // ponto focal para cima
+                    camera.FOCAL_UP();
                     break;
                 case sf::Keyboard::G:
                     // camera para a esquerda
+                    camera.VRP_LEFT();
                     break;
                 case sf::Keyboard::H:
                     // camera para a direita
+                    camera.VRP_RIGHT();
                     break;
                 case sf::Keyboard::T:
                     // camera para baixo
+                    camera.VRP_DOWN();
                     break;
                 case sf::Keyboard::Y:
                     // camera para cima
+                    camera.VRP_UP();
                     break;
                 default:
                     break;
@@ -393,6 +413,28 @@ int main(){
 
         // std::vector<vec3f> srt_points = apply_transf(terrain, visible_faces, cam.get_proj_mat(curr_view));
 
+        float **mat = camera.getMatrix();
+
+        // std::cout << mat[0][0] << ", " << mat[0][1] << ", " << mat[0][2] << ", " << mat[0][3] << std::endl;
+        // std::cout << mat[1][0] << ", " << mat[1][1] << ", " << mat[1][2] << ", " << mat[1][3] << std::endl;
+        // std::cout << mat[2][0] << ", " << mat[2][1] << ", " << mat[2][2] << ", " << mat[2][3] << std::endl;
+
+        std::vector<vec3f> src_points;
+        for(const auto &p : terrain.points){
+            float x, y, z;
+
+            x = (mat[0][0] * p.x) + (mat[0][1] * p.y) + (mat[0][2] * p.z) + (mat[0][3] * 1);
+            y = (mat[1][0] * p.x) + (mat[1][1] * p.y) + (mat[1][2] * p.z) + (mat[1][3] * 1);
+            z = (mat[2][0] * p.x) + (mat[2][1] * p.y) + (mat[2][2] * p.z) + (mat[2][3] * 1);
+
+            src_points.push_back(vec3f(x, y, z));
+        }
+
+        // for(auto &p : src_points){
+        //     std::cout << p.x << ", " << p.y << ", " << p.z << std::endl;
+        // }
+
+        // std::vector<vec3f> srt_points = apply_pipeline(camera.getMatrix(), terrain.points);
         // void draw(terrain, srt_points, visible_faces);
         // ignorem isso, vou mudar
         win.clear();
@@ -401,15 +443,15 @@ int main(){
             sf::VertexArray lines(sf::Lines, 2);
             std::pair<index_t, index_t> dir = terrain.half_direction(i);
 
-            auto srt = terrain.points[dir.first];
-            auto end = terrain.points[dir.second];
+            auto srt = src_points[dir.first];
+            auto end = src_points[dir.second];
 
-            lines[0].position.x = (srt.x + 10) * 10;
-            lines[0].position.y = (srt.y + 10) * 10;
+            lines[0].position.x = srt.x;
+            lines[0].position.y = srt.y;
             lines[0].color = sf::Color::Green;
 
-            lines[1].position.x = (end.x + 10) * 10;
-            lines[1].position.y = (end.y + 10) * 10;
+            lines[1].position.x = end.x;
+            lines[1].position.y = end.y;
             lines[1].color = sf::Color::Blue;
 
             win.draw(lines);

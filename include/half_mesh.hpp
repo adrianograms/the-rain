@@ -65,7 +65,6 @@ public:
 
     void clear_mesh();
 
-
     // the value of x:y must be a single number following x + y * mx;
     void build_mesh(uint64_t, uint64_t, std::function<vec3f(index_t)>);
 

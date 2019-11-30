@@ -1,12 +1,5 @@
 #include "include/pipeline.hpp"
 
-#include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
-#include <gtx/string_cast.hpp>
-#include <gtx/transform.hpp>
-#include <gtc/type_ptr.hpp>
-#include <gtx/norm.hpp>
-
 #include <iostream>
 #include <string>
 #include "math.h"
@@ -56,7 +49,7 @@ float discoverB( float a , glm::vec3 VRP )
 
         if( abs(distancia_focos) < tolerancia )
         {
-            std::cout << "VALOR DE C = " << c << std::endl;
+            // std::cout << "VALOR DE C = " << c << std::endl;
 
             return sqrt( pow(a,2) - pow(c,2) );
         }
@@ -78,14 +71,14 @@ void Pipeline::setMatrixJP( float xMin, float xMax, float yMin, float yMax, floa
 {
 
     JP[0][0] = ( uMax - uMin) / ( xMax - xMin );
-    JP[1][1] = ( vMin - vMax ) / ( yMax - yMin );
+    JP[1][1] = ( vMax - vMin ) / ( yMax - yMin );
     JP[0][3] = -xMin * ( uMax - uMin ) / ( xMax - xMin ) + uMin;
     JP[1][3] = yMin * ( vMax - vMin ) / ( yMax - yMin ) + vMax;
 
     JP[0][1] = JP[0][2] = JP[1][0] = JP[1][2] = JP[2][0] =  JP[2][1] = JP[2][3] = JP[3][0] = JP[3][1] = JP[3][2] = 0;
     JP[2][2] = JP[3][3] = 1;
 
-    std::cout << glm::to_string(JP) << std::endl;
+    // std::cout << glm::to_string(JP) << std::endl;
 }
 
 /// Constrói a matriz SRC usada no Pipeline
@@ -115,7 +108,7 @@ void Pipeline::setMatrixSRC( glm::vec3 V, glm::vec3 F )
 
     SRC = SRC_;
 
-    std::cout << glm::to_string(SRC) << std::endl;
+    // std::cout << glm::to_string(SRC) << std::endl;
 }
 
 /// Após a mudança de VRP/FOCAL é preciso definir a matriz SRC novamente
@@ -142,18 +135,18 @@ void Pipeline::redoPipeline()
 
     SRC = SRC_;
 
-    std::cout << glm::to_string(SRC) << std::endl;
+    // std::cout << glm::to_string(SRC) << std::endl;
 }
 
 float** Pipeline::getMatrix()
 {
     PIPELINE = SRC * JP;
 
-    std::cout << glm::to_string(PIPELINE) << std::endl;
+    // std::cout << glm::to_string(PIPELINE) << std::endl;
 
     for( int i = 0 ; i < 4 ; i++)
     {
-        for( int j = 0 ; j < 4 ; i++)
+        for( int j = 0 ; j < 4 ; j++)
             Matriz_Pipeline[i][j] = PIPELINE[i][j];
 
     }
@@ -208,9 +201,9 @@ void Pipeline::VRP_UP( )
 
         a = raio;
         b = discoverB( a , (VRP - FOCAL) ) ;
-        std::cout << "B = " << b << "\n";
+        // std::cout << "B = " << b << "\n";
 
-        std::cout << "R = " << raio << "\n";
+        // std::cout << "R = " << raio << "\n";
 
         VRP_verticalSphereDefined = true;
     }
@@ -231,7 +224,7 @@ void Pipeline::VRP_UP( )
     if(grauXY == 90)  /// 90 graus é o máximo permitido para subida
         return;
 
-    std::cout << "GRAU = " << grauXY << std::endl;
+    // std::cout << "GRAU = " << grauXY << std::endl;
 
 
     if(grauXY == 360)
@@ -247,8 +240,8 @@ void Pipeline::VRP_UP( )
 
     VRP.x = (  esferaVRP(0 , VRP.y, VRP.z) );
 
-    std::cout << "VRP = ";
-    std::cout << glm::to_string(VRP) << std::endl;
+    // std::cout << "VRP = ";
+    // std::cout << glm::to_string(VRP) << std::endl;
 
     redoPipeline();
 }
@@ -257,8 +250,8 @@ void Pipeline::VRP_DOWN( )
 {
     VRP_horizontalSphereDefined = FOCAL_horizontalSphereDefined = FOCAL_verticalSphereDefined = false;
 
-    std::cout << "VRP = ";
-    std::cout << glm::to_string(VRP) << std::endl;
+    // std::cout << "VRP = ";
+    // std::cout << glm::to_string(VRP) << std::endl;
 
     if( !VRP_verticalSphereDefined )
     {
@@ -280,15 +273,15 @@ void Pipeline::VRP_DOWN( )
         else if( F.z > 0 && F.y < 0 )
             grauXY = 360 - grauXY;
 
-        std::cout << "GRAU CALCULADO = " << grauXY << "\n";
+        // std::cout << "GRAU CALCULADO = " << grauXY << "\n";
 
         raio = distance(VRP, FOCAL);
 
         a = raio;
         b = discoverB( a , (VRP - FOCAL) ) ;
-        std::cout << "B = " << b << "\n";
+        // std::cout << "B = " << b << "\n";
 
-        std::cout << "R = " << raio << "\n";
+        // std::cout << "R = " << raio << "\n";
 
         VRP_verticalSphereDefined = true;
     }
@@ -309,7 +302,7 @@ void Pipeline::VRP_DOWN( )
     if(grauXY == 270)   /// 270 graus é o máximo permitido para descida
         return;
 
-    std::cout << "GRAU = " << grauXY << std::endl;
+    // std::cout << "GRAU = " << grauXY << std::endl;
 
 
     if(grauXY == 360)
@@ -325,8 +318,8 @@ void Pipeline::VRP_DOWN( )
 
     VRP.x = (  esferaVRP(0 , VRP.y, VRP.z) );
 
-    std::cout << "VRP = ";
-    std::cout << glm::to_string(VRP) << std::endl;
+    // std::cout << "VRP = ";
+    // std::cout << glm::to_string(VRP) << std::endl;
 
     redoPipeline();
 }
@@ -356,17 +349,17 @@ void Pipeline::VRP_LEFT( )
 
     double r = sqrt( pow(F.x,2) + pow(F.z,2) );
 
-    std::cout << "TAMANHO = " << r << "\n";
+    // std::cout << "TAMANHO = " << r << "\n";
 
-    std::cout << "MOVEU PARA ESQUERDA - GRAU = " << grauXZ << "\n";
+    // std::cout << "MOVEU PARA ESQUERDA - GRAU = " << grauXZ << "\n";
 
     grauXZ--;
 
     VRP.x = (  sin( (grauXZ) * PI/180 ) * r + FOCAL.x);
     VRP.z = (  cos( (grauXZ) * PI/180 ) * r + FOCAL.z);
 
-    std::cout << "VRP = ";
-    std::cout << glm::to_string(VRP) << std::endl;
+    // std::cout << "VRP = ";
+    // std::cout << glm::to_string(VRP) << std::endl;
 
     redoPipeline();
 
@@ -397,15 +390,15 @@ void Pipeline::VRP_RIGHT( )
 
     double r = sqrt( pow(F.x,2) + pow(F.z,2) );
 
-    std::cout << "MOVEU PARA DIRETA - GRAU = " << grauXZ << "\n";
+    // std::cout << "MOVEU PARA DIRETA - GRAU = " << grauXZ << "\n";
 
     grauXZ++;
 
     VRP.x = (  sin( (grauXZ) * PI/180 ) * r + FOCAL.x);
     VRP.z = (  cos( (grauXZ) * PI/180 ) * r + FOCAL.z);
 
-    std::cout << "VRP = ";
-    std::cout << glm::to_string(VRP) << std::endl;
+    // std::cout << "VRP = ";
+    // std::cout << glm::to_string(VRP) << std::endl;
 
     redoPipeline();
 }
@@ -414,8 +407,8 @@ void Pipeline::FOCAL_UP()
 {
     FOCAL_horizontalSphereDefined = VRP_horizontalSphereDefined = VRP_verticalSphereDefined= false;
 
-    std::cout << "FOCAL = ";
-    std::cout << glm::to_string(FOCAL) << std::endl;
+    // std::cout << "FOCAL = ";
+    // std::cout << glm::to_string(FOCAL) << std::endl;
 
     if( !FOCAL_verticalSphereDefined )
     {
@@ -437,15 +430,15 @@ void Pipeline::FOCAL_UP()
         else if( F.z > 0 && F.y < 0 )
             grauXY = 360 - grauXY;
 
-        std::cout << "GRAU CALCULADO = " << grauXY << "\n";
+        // std::cout << "GRAU CALCULADO = " << grauXY << "\n";
 
         raio = distance(VRP, FOCAL);
 
         a = raio;
         b = discoverB( a , F ) ;
-        std::cout << "B = " << b << "\n";
+        // std::cout << "B = " << b << "\n";
 
-        std::cout << "R = " << raio << "\n";
+        // std::cout << "R = " << raio << "\n";
 
         FOCAL_verticalSphereDefined = true;
     }
@@ -466,7 +459,7 @@ void Pipeline::FOCAL_UP()
     if(grauXY == 90)
         return;
 
-    std::cout << "GRAU = " << grauXY << std::endl;
+    // std::cout << "GRAU = " << grauXY << std::endl;
 
 
     if(grauXY == 360)
@@ -482,8 +475,8 @@ void Pipeline::FOCAL_UP()
 
     FOCAL.x = esferaFOCAL(0 , FOCAL.y, FOCAL.z);
 
-    std::cout << "FOCAL = ";
-    std::cout << glm::to_string(FOCAL) << std::endl;
+    // std::cout << "FOCAL = ";
+    // std::cout << glm::to_string(FOCAL) << std::endl;
 
 
     redoPipeline();
@@ -494,8 +487,8 @@ void Pipeline::FOCAL_DOWN()
 
     FOCAL_horizontalSphereDefined = VRP_horizontalSphereDefined = VRP_verticalSphereDefined = false;
 
-    std::cout << "FOCAL = ";
-    std::cout << glm::to_string(FOCAL) << std::endl;
+    // std::cout << "FOCAL = ";
+    // std::cout << glm::to_string(FOCAL) << std::endl;
 
     if( !FOCAL_verticalSphereDefined )
     {
@@ -546,7 +539,7 @@ void Pipeline::FOCAL_DOWN()
     if(grauXY == 270)
         return;
 
-    std::cout << "GRAU = " << grauXY << std::endl;
+    // std::cout << "GRAU = " << grauXY << std::endl;
 
 
     if(grauXY == 360)
@@ -562,8 +555,8 @@ void Pipeline::FOCAL_DOWN()
 
     FOCAL.x = esferaFOCAL(0 , FOCAL.y, FOCAL.z) ;
 
-    std::cout << "FOCAL = ";
-    std::cout << glm::to_string(FOCAL) << std::endl;
+    // std::cout << "FOCAL = ";
+    // std::cout << glm::to_string(FOCAL) << std::endl;
 
     redoPipeline();
 }
@@ -593,17 +586,17 @@ void Pipeline::FOCAL_LEFT()
 
     double r = sqrt( pow(F.x,2) + pow(F.z,2) );
 
-    std::cout << "TAMANHO = " << r << "\n";
+    // std::cout << "TAMANHO = " << r << "\n";
 
-    std::cout << "MOVEU PARA ESQUERDA - GRAU = " << grauXZ << "\n";
+    // std::cout << "MOVEU PARA ESQUERDA - GRAU = " << grauXZ << "\n";
 
     grauXZ--;
 
     FOCAL.x = (  sin( (grauXZ) * PI/180 ) * r + VRP.x);
     FOCAL.z = (  cos( (grauXZ) * PI/180 ) * r + VRP.z);
 
-    std::cout << "FOCAL = ";
-    std::cout << glm::to_string(FOCAL) << std::endl;
+    // std::cout << "FOCAL = ";
+    // std::cout << glm::to_string(FOCAL) << std::endl;
 
     redoPipeline();
 
@@ -635,17 +628,17 @@ void Pipeline::FOCAL_RIGHT()
 
     double r = sqrt( pow(F.x,2) + pow(F.z,2) );
 
-    std::cout << "TAMANHO = " << r << "\n";
+    // std::cout << "TAMANHO = " << r << "\n";
 
-    std::cout << "MOVEU PARA ESQUERDA - GRAU = " << grauXZ << "\n";
+    // std::cout << "MOVEU PARA ESQUERDA - GRAU = " << grauXZ << "\n";
 
     grauXZ++;
 
     FOCAL.x = (  sin( (grauXZ) * PI/180 ) * r + VRP.x);
     FOCAL.z = (  cos( (grauXZ) * PI/180 ) * r + VRP.z);
 
-    std::cout << "FOCAL = ";
-    std::cout << glm::to_string(FOCAL) << std::endl;
+    // std::cout << "FOCAL = ";
+    // std::cout << glm::to_string(FOCAL) << std::endl;
 
     redoPipeline();
 }
@@ -700,8 +693,8 @@ float Pipeline::VRP_bhaskaraX( float a, float b, float c )
     float aux1 = abs( x1 - VRP.x );
     float aux2 = abs( x2 - VRP.x );
 
-    std::cout << "x1 = " << x1 << std::endl;
-    std::cout << "x2 = " << x2 << std::endl;
+    // std::cout << "x1 = " << x1 << std::endl;
+    // std::cout << "x2 = " << x2 << std::endl;
 
     if( isnan( x2 ) )
         return x1;
@@ -725,8 +718,8 @@ float Pipeline::FOCAL_bhaskaraX( float a, float b, float c )
     float aux1 = abs( x1 - FOCAL.x );
     float aux2 = abs( x2 - FOCAL.x );
 
-    std::cout << "x1 = " << x1 << std::endl;
-    std::cout << "x2 = " << x2 << std::endl;
+    // std::cout << "x1 = " << x1 << std::endl;
+    // std::cout << "x2 = " << x2 << std::endl;
 
     if( isnan( x2 ) )
         return x1;
@@ -754,5 +747,21 @@ std::vector<index_t> filter_normal(const half_mesh &terrain, vec3f n){
             ret.push_back(i);
         }
     }
+    return ret;
+}
+
+std::vector<vec3f> apply_pileline(float **mat, std::vector<vec3f> &sru_points){
+    std::vector<vec3f> ret;
+
+    for(const auto &p : sru_points){
+        float x, y, z;
+
+        x = mat[0][0] * p.x + mat[0][1] * p.y + mat[0][2] * p.z + mat[0][3] * 1;
+        y = mat[1][0] * p.x + mat[1][1] * p.y + mat[1][2] * p.z + mat[1][3] * 1;
+        z = mat[2][0] * p.x + mat[2][1] * p.y + mat[2][2] * p.z + mat[2][3] * 1;
+
+        ret.push_back(vec3f(x, y, z));
+    }
+
     return ret;
 }
