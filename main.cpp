@@ -13,26 +13,7 @@
 #define WIN_Y 768
 #define WIN_X 1337
 
-struct light{
-    std::string x;
-    std::string y;
-    std::string z;
-
-    double LA;
-
-    double KA;
-    double KD;
-    double KS;
-
-    light(): x("0"), y("0"), z("0"), LA(20), KA(20), KD(20), KS(20) {}
-};
-
-// TODO list:
-// menus
-// save to file
-// load from file
-// camera
-// pipeline
+;
 
 const std::vector<sf::Color> palett = {{ 30,   0, 255},
                                        { 12,  60, 232},
@@ -50,7 +31,7 @@ const std::vector<sf::Color> palett = {{ 30,   0, 255},
                                        {232,  54,  12},
                                        {255,   0,  29}};
 
-sf::RenderWindow win(sf::VideoMode(WIN_X, WIN_Y), ":(", sf::Style::Close | sf::Style::Titlebar);
+sf::RenderWindow win(sf::VideoMode(WIN_X, WIN_Y), "8===========D~~~", sf::Style::Close | sf::Style::Titlebar);
 
 int main(){
     win.setVerticalSyncEnabled(true);
@@ -62,13 +43,18 @@ int main(){
     Pipeline  camera;
 
     camera.setMatrixJP(-100.0, 100.0, -100.0, 100.0, 0, WIN_X, 0, WIN_Y);
-    camera.setMatrixSRC({0, 10, 30}, {0, 0, 0});
+    camera.setMatrixSRC({0, 30, 30}, {50, 0, 50});
 
     auto zmap = [&height, &conf](index_t index) -> vec3f {
         uint64_t i = index / conf.mx;
         uint64_t j = index % conf.mx;
 
-        return vec3f((float)i, (float)height[i][j]/16.0, (float)j);
+        return vec3f((float)i, (float)height[i][j]/(float)conf.hmax, (float)j);
+    };
+
+    auto hmax_update = [&conf, &terrain, &zmap](uint64_t i){
+        conf.hmax = i;
+        terrain.update_mesh_z(zmap);
     };
 
     auto terrain_update_size = [&terrain, &height, &conf, &zmap](uint64_t x, uint64_t y){
@@ -222,6 +208,12 @@ int main(){
         terrain.update_mesh_z(zmap);
 
     });
+    conf.add_button("assets/button_minus.png", {WIN_X - 435, WIN_Y - 50}, [&hmax_update, &conf](){
+        hmax_update(conf.hmax == 1 ? 1 : --conf.hmax);
+    });
+    conf.add_button("assets/button_plus.png", {WIN_X - 400, WIN_Y - 50}, [&hmax_update, &conf](){
+        hmax_update(conf.hmax == 255 ? 255 : ++conf.hmax);
+    });
     conf.add_button("assets/button_generate.png", {WIN_X - 120, WIN_Y - 90}, [&height, &terrain, &zmap](){
         height.gen(std::time(NULL));
         terrain.update_mesh_z(zmap);
@@ -269,8 +261,6 @@ int main(){
     conf.add_button("assets/button_minux.png", {WIN_X - 265, WIN_Y - 50}, [&terrain_update_size, &conf](){
         terrain_update_size(++conf.mx, conf.my);
     });
-
-
 
     // overlays
     conf.add_overlay({WIN_X - 230, WIN_Y - 85}, [&conf]() -> std::string {
@@ -322,6 +312,9 @@ int main(){
     conf.add_overlay({400, WIN_Y - 90}, [&lpoint]() -> std::string {
         return "KS: " + std::to_string(lpoint.KS);
     });
+    conf.add_overlay({WIN_X - 365, WIN_Y - 45}, [&conf]() -> std::string {
+        return std::to_string(conf.hmax);
+    });
 
 
     terrain.build_mesh(conf.mx, conf.my, zmap);
@@ -354,7 +347,6 @@ int main(){
                     break;
                 case sf::Keyboard::Z:
                     // aumenta o fov
-
                     break;
                 case sf::Keyboard::X:
                     // diminui o fov
@@ -409,34 +401,9 @@ int main(){
             }
         }
 
-        auto visible_faces = filter_normal(terrain, vec3f(0,0,0));
+        auto visible_faces = filter_normal(terrain, camera.getn());
+        auto src_points = apply_pipeline(camera.getMatrix(), terrain.points);
 
-        // std::vector<vec3f> srt_points = apply_transf(terrain, visible_faces, cam.get_proj_mat(curr_view));
-
-        float **mat = camera.getMatrix();
-
-        // std::cout << mat[0][0] << ", " << mat[0][1] << ", " << mat[0][2] << ", " << mat[0][3] << std::endl;
-        // std::cout << mat[1][0] << ", " << mat[1][1] << ", " << mat[1][2] << ", " << mat[1][3] << std::endl;
-        // std::cout << mat[2][0] << ", " << mat[2][1] << ", " << mat[2][2] << ", " << mat[2][3] << std::endl;
-
-        std::vector<vec3f> src_points;
-        for(const auto &p : terrain.points){
-            float x, y, z;
-
-            x = (mat[0][0] * p.x) + (mat[0][1] * p.y) + (mat[0][2] * p.z) + (mat[0][3] * 1);
-            y = (mat[1][0] * p.x) + (mat[1][1] * p.y) + (mat[1][2] * p.z) + (mat[1][3] * 1);
-            z = (mat[2][0] * p.x) + (mat[2][1] * p.y) + (mat[2][2] * p.z) + (mat[2][3] * 1);
-
-            src_points.push_back(vec3f(x, y, z));
-        }
-
-        // for(auto &p : src_points){
-        //     std::cout << p.x << ", " << p.y << ", " << p.z << std::endl;
-        // }
-
-        // std::vector<vec3f> srt_points = apply_pipeline(camera.getMatrix(), terrain.points);
-        // void draw(terrain, srt_points, visible_faces);
-        // ignorem isso, vou mudar
         win.clear();
 
         for(index_t i : terrain.edge_vector){

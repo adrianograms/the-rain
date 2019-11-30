@@ -73,19 +73,19 @@ public:
     // get the half_edge of the index
     const half_edge &half_at(index_t) const;
     // get the direction of the index
-    std::pair<index_t, index_t> half_direction(index_t);
+    std::pair<index_t, index_t> half_direction(index_t) const;
     // get the index of the direction
     index_t direction_half(std::pair<index_t, index_t>);
     // get the neighbors vertexes of the vertex
-    std::vector<index_t> vertex_vertexes(index_t);
+    std::vector<index_t> vertex_vertexes(index_t) const;
     // get the neightbors faces of the vertex
-    std::vector<index_t> vertex_faces(index_t);
+    std::vector<index_t> vertex_faces(index_t) const;
     // is the vertex a boundary
-    bool vertex_boundary(index_t);
+    bool vertex_boundary(index_t) const;
 
 
-    std::vector<index_t> get_vertex_faces(index_t);
-    std::vector<index_t> get_face_vertexes(index_t);
+    std::vector<index_t> get_vertex_faces(index_t) const;
+    std::vector<index_t> get_face_vertexes(index_t) const;
 
     vec3f get_face_normal(index_t) const;
 };

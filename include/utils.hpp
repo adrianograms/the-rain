@@ -15,6 +15,8 @@ struct config{
     uint64_t mx;
     uint64_t my;
 
+    uint64_t hmax;
+
     view_mode vmode;
 
     std::string file_name;

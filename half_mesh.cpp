@@ -222,7 +222,7 @@ half_edge &half_mesh::half_at(index_t i) const {
     return this->half_vector[i];
 }
 
-std::pair<index_t, index_t> half_mesh::half_direction(index_t i){
+std::pair<index_t, index_t> half_mesh::half_direction(index_t i) const {
      half_edge half = this->half_vector[i];
      return std::make_pair(this->half_vector[half.pair].vertex, half.vertex);
 }
@@ -231,7 +231,7 @@ index_t half_mesh::direction_half(std::pair<index_t, index_t> dir){
     return this->edge_index_map[dir];
 }
 
-std::vector<index_t> half_mesh::vertex_vertexes(index_t i){
+std::vector<index_t> half_mesh::vertex_vertexes(index_t i) const {
     std::vector<index_t> ret;
 
     index_t half_start;
@@ -249,7 +249,7 @@ std::vector<index_t> half_mesh::vertex_vertexes(index_t i){
     return ret;
 }
 
-std::vector<index_t> half_mesh::vertex_faces(index_t i){
+std::vector<index_t> half_mesh::vertex_faces(index_t i) const {
     std::vector<index_t> ret;
 
     index_t half_start;
@@ -269,7 +269,7 @@ std::vector<index_t> half_mesh::vertex_faces(index_t i){
     return ret;
 }
 // param i is the vertex number
-std::vector<index_t> half_mesh::get_vertex_faces(index_t i){
+std::vector<index_t> half_mesh::get_vertex_faces(index_t i) const {
     std::vector<index_t> ret;
 
     index_t start;
@@ -290,7 +290,7 @@ std::vector<index_t> half_mesh::get_vertex_faces(index_t i){
 }
 
 // param i is the face number
-std::vector<index_t> half_mesh::get_face_vertexes(index_t i){
+std::vector<index_t> half_mesh::get_face_vertexes(index_t i) const {
     std::vector<index_t> ret;
 
     index_t curr_he = i;
@@ -313,7 +313,7 @@ vec3f half_mesh::get_face_normal(index_t i) const {
     return normals[i];
 }
 
-bool half_mesh::vertex_boundary(index_t i){
+bool half_mesh::vertex_boundary(index_t i) const {
     return this->half_vector[this->vertex_vector[i]].face == -1;
 
 }

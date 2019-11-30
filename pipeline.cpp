@@ -53,8 +53,9 @@ float discoverB( float a , glm::vec3 VRP )
 
             return sqrt( pow(a,2) - pow(c,2) );
         }
-
     }
+
+    return 0.0;
 }
 
 /// MÉTODOS DA CLASSE PIPELINE
@@ -71,11 +72,11 @@ void Pipeline::setMatrixJP( float xMin, float xMax, float yMin, float yMax, floa
 {
 
     JP[0][0] = ( uMax - uMin) / ( xMax - xMin );
-    JP[1][1] = ( vMax - vMin ) / ( yMax - yMin );
+    JP[1][1] = ( vMin - vMax) / ( yMax - yMin );
     JP[0][3] = -xMin * ( uMax - uMin ) / ( xMax - xMin ) + uMin;
     JP[1][3] = yMin * ( vMax - vMin ) / ( yMax - yMin ) + vMax;
 
-    JP[0][1] = JP[0][2] = JP[1][0] = JP[1][2] = JP[2][0] =  JP[2][1] = JP[2][3] = JP[3][0] = JP[3][1] = JP[3][2] = 0;
+    JP[0][1] = JP[0][2] = JP[1][0] = JP[1][2] = JP[2][0] = JP[2][1] = JP[2][3] = JP[3][0] = JP[3][1] = JP[3][2] = 0;
     JP[2][2] = JP[3][3] = 1;
 
     // std::cout << glm::to_string(JP) << std::endl;
@@ -107,7 +108,6 @@ void Pipeline::setMatrixSRC( glm::vec3 V, glm::vec3 F )
     );
 
     SRC = SRC_;
-
     // std::cout << glm::to_string(SRC) << std::endl;
 }
 
@@ -733,8 +733,9 @@ float Pipeline::FOCAL_bhaskaraX( float a, float b, float c )
 
 }
 
-
-
+vec3f Pipeline::getn(){
+    return vec3f(n.x, n.y, n.z);
+}
 
 // return as faces por index que sao visiveis
 // n é o vetor n da câmera
@@ -750,7 +751,7 @@ std::vector<index_t> filter_normal(const half_mesh &terrain, vec3f n){
     return ret;
 }
 
-std::vector<vec3f> apply_pileline(float **mat, std::vector<vec3f> &sru_points){
+std::vector<vec3f> apply_pipeline(float **mat, std::vector<vec3f> &sru_points){
     std::vector<vec3f> ret;
 
     for(const auto &p : sru_points){
