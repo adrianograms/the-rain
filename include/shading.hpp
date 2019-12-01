@@ -79,7 +79,23 @@ struct light{
     double KD;
     double KS;
 
-    light(): x("0"), y("0"), z("0"), LA(20), KA(20), KD(20), KS(20) {}
+    light(): x("0"), y("0"), z("0"), N(1.6), LPOINT(10), LA(120), KA(0.5), KD(0.5), KS(0.5) {}
+
+    void parse(){
+        float x = std::stof(this->x);
+        x = x == std::nan("1") ? 0.0 : x;
+        this->x = std::to_string(x);
+
+        float y = std::stof(this->y);
+        y = y == std::nan("1") ? 0.0 : y;
+        this->y = std::to_string(y);
+
+        float z = std::stof(this->z);
+        z = z == std::nan("1") ? 0.0 : z;
+        this->z = std::to_string(z);
+
+        pos = vec3f(x, y, z);
+    }
 };
 
 // --------------------------------------------------------------------------------------------------------------------

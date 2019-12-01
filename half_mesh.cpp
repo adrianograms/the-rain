@@ -292,11 +292,9 @@ std::vector<index_t> half_mesh::get_vertex_faces(index_t i) const {
 // param i is the face number
 std::vector<index_t> half_mesh::get_face_vertexes(index_t i) const {
     std::vector<index_t> ret;
-    std::cout << "call with he number " << i << std::endl;
+
     index_t curr_he = i;
     index_t start_vert, curr_vert;
-
-    std::cout << "he.size() " << half_vector.size() << std::endl;
 
     start_vert = curr_vert = half_vector[curr_he].vertex;
 

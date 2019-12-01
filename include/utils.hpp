@@ -15,7 +15,7 @@ struct config{
     uint64_t mx;
     uint64_t my;
 
-    uint64_t hmax;
+    float hmax;
 
     view_mode vmode;
 
