@@ -537,7 +537,7 @@ int main(){
             }
 
             for(auto f : visible_faces){
-                guro_face(zbuff, f, conf, lpoint, camera.getvrp(),src_points);
+                flat_shading_face(zbuff, f, conf, lpoint, camera.getvrp(),src_points);
             }
 
             im.create(WIN_X, WIN_Y);
