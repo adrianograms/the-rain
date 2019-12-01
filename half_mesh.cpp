@@ -45,22 +45,6 @@ void half_mesh::_gen_objects(std::vector<half::triangle> &triangles, std::vector
     }
 }
 
-void half_mesh::_update_normals(){
-    normals.clear();
-
-    for(auto face : face_vector){
-        auto vf = get_face_vertexes(face);
-
-        vec3f A = points[vf[0]];
-        vec3f B = points[vf[1]];
-        vec3f C = points[vf[2]];
-
-        vec3f BA = A - B;
-        vec3f BC = C - B;
-
-        normals.emplace_back(BA.cross(BC).norm());
-    }
-}
 // ---------- public ----------
 
 half_mesh::half_mesh() { }
@@ -72,8 +56,6 @@ void half_mesh::update_mesh_z(std::function<vec3f(index_t)> fn){
     for(uint64_t i = 0; i < vertex_vector.size(); i++){
         points.push_back(fn(i));
     }
-
-    _update_normals();
 }
 
 // generate the half edge mesh
@@ -308,7 +290,16 @@ std::vector<index_t> half_mesh::get_face_vertexes(index_t i) const {
 }
 
 vec3f half_mesh::get_face_normal(index_t i) const {
-    return normals[i];
+    auto vf = get_face_vertexes(i);
+
+    vec3f A = points[vf[0]];
+    vec3f B = points[vf[1]];
+    vec3f C = points[vf[2]];
+
+    vec3f BA = A - B;
+    vec3f BC = C - B;
+
+    return vec3f(BA.cross(BC).norm());
 }
 
 bool half_mesh::vertex_boundary(index_t i) const {

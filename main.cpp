@@ -41,11 +41,11 @@ int main(){
     // camera.setMatrixJP(-100.0, 100.0, -100.0, 100.0, 0, WIN_X, 0, WIN_Y);
     // camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
 
-    camera.setMatrixJP(-4.0, 4.0, -4.0, 4.0, 0, WIN_X, 0, WIN_Y);
-    camera.setMatrixSRC({0, 2, 2}, {2, 0, 2});
+    camera.setMatrixJP(-10.0, 10.0, -10.0, 10.0, 0, WIN_X, 0, WIN_Y);
+    camera.setMatrixSRC({0, 20, 2}, {20, 0, 20});
 
-    camera.setMatrixJP(-50.0, 50.0, -50.0, 50.0, 0, WIN_X, 0, WIN_Y);
-    camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
+    // camera.setMatrixJP(-50.0, 50.0, -50.0, 50.0, 0, WIN_X, 0, WIN_Y);
+    // camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
 
     auto zmap = [&height, &conf](index_t index) -> vec3f {
         uint64_t i = index / conf.mx;
@@ -500,20 +500,24 @@ int main(){
             }
         }
 
-        // auto visible_faces = filter_normal(conf.terrain, camera.getn());
+        auto visible_faces = filter_normal(conf.terrain, camera.getn());
         auto src_points = apply_pipeline(camera.getMatrix(), conf.terrain.points);
 
         win.clear();
 
         {
-            // isso é so pra desenhar a image na tela
+             // isso é so pra desenhar a image na tela
             sf::Texture t;
             sf::Sprite  s;
-            sf::Image   im;
-            im.loadFromFile("the_user_can_put_a_plane_as_texture_if_he_wants_to.jpg");
-            t.loadFromImage(im);
+            sf::Image  im;
 
-            conf.texture = im;
+            conf.texture.create(conf.mx, conf.my);
+             for(uint64_t i = 0; i < conf.my; i++){
+                 for(uint64_t j = 0; j < conf.mx; j++){
+                     auto c = palett[(uint64_t)((height[i][j] / 256.0) * palett.size())];
+                     conf.texture.setPixel(j, i, c);
+                 }
+             }
 
             lpoint.pos = vec3f(50, 50, -50);
 
@@ -532,7 +536,7 @@ int main(){
                 }
             }
 
-            for(auto f : conf.terrain.face_vector){
+            for(auto f : visible_faces){
                 flat_shading_face(zbuff, f, conf, lpoint, camera.getvrp(),src_points);
             }
 
@@ -572,7 +576,7 @@ int main(){
         // }
 
 
-        // for(auto f : conf.terrain.face_vector){
+        // for(auto f : visible_faces){
 
         //     sf::VertexArray lines(sf::Triangles, 3);
 

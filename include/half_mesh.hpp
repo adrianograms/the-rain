@@ -18,7 +18,6 @@
 class half_mesh{
 
     void _gen_objects(std::vector<half::triangle> &, std::vector<half::edge> &, uint64_t, uint64_t);
-    void _update_normals();
 
     // basic extructure of each face
     //                              <---- half edge from 3 to 1
@@ -88,7 +87,5 @@ public:
 
     vec3f get_face_normal(index_t) const;
 };
-
-// ---------- public ----------
 
 #endif
