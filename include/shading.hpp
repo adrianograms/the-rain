@@ -35,11 +35,29 @@ struct txColor
     }
     sf::Color operator + (const sf::Color &color)
     {
-        return sf::Color(r + color.r,b + color.b,g + color.g);
+        char r_new = r + color.r;
+        if(r > 0 && r_new < color.r)
+            r_new = 255;
+        else if(r < 0 && r_new > color.r)
+            r_new = 0;
+
+        char g_new = g + color.g;
+        if(g > 0 && g_new < color.g)
+            g_new = 255;
+        else if(g < 0 && g_new > color.g)
+            g_new = 0;
+
+        char b_new = b + color.b;
+        if(b > 0 && b_new < color.b)
+            b_new = 255;
+        else if(b < 0 && b_new > color.b)
+            b_new = 0;
+            
+        return sf::Color(r_new,g_new,b_new);
     }
     txColor operator * (const double &v)
     {
-        return txColor(r*v,b*v,g*v);
+        return txColor(r*v,g*v,b*v);
     }
 };
 
@@ -218,7 +236,8 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos,
         vec3f normal(0.0,0.0,0.0);
         for(int j =0; j< faces.size(); j++)
         {
-            normal += conf.terrain.get_face_normal(faces[i]);
+            //std::cout <<  faces[j] << std::endl;
+            normal += conf.terrain.get_face_normal(faces[j]);
         }
         normal.normlize();
         vec3f lVertice = lp.pos - conf.terrain.points[pontos[i]]; // Pontos no SRU
@@ -254,9 +273,6 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos,
 
 void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim)
 {
-    // Se fim não existe então é necessario apenas pintar um pixel
-    if(inicio == NULL)
-        return;
     int x_inicial, x_final, y;
     x_inicial = (int)round(inicio->x);
     y = (int)round(inicio->y);
@@ -272,6 +288,7 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
                 z_buffer[y][x_inicial].second = inicio->color;
             }
         }
+        delete(inicio);
     }
     else
     {
@@ -293,6 +310,8 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
             txColor.calc(fim->color, inicio->color, deltaX);
         }
         //Corta a scanline caso ela passe da janela
+        if(x_inicial >= WINDOW_Y)
+            return;
         if(x_inicial < 0)
         {
             //Se os dois estão fora tanto o inicio quanto o fim da scanline não faz nada
@@ -313,7 +332,7 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
             double deslocamento = fim->x - (WINDOW_X-1);
             x_final = WINDOW_X - 1;
             fim->z = fim->z - Tz*deslocamento;
-            inicio->color =  (txColor * (-deslocamento)) + inicio->color ;
+            fim->color =  (txColor * (-deslocamento)) + fim->color ;
         }
         // Anda por todo os x's da scanline
         //Seta os valores iniciais da scanline que são os valores do primeiro vertice da scanline
@@ -331,11 +350,12 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
             if(z_buffer[y][i].first < z_atual)
             {
                 z_buffer[y][i].first = z_atual;
-                z_buffer[y][i].second = color;
+                int diff = (i - x_inicial); 
+                z_buffer[y][i].second = (txColor * diff) + color;
             }
             // Incrementa os valores para continuar andando pela scanline
             z_atual += Tz;
-            color = txColor + color;
+            //color = txColor + color;
         }
         //deleta os point's para limpar memoria
         delete(inicio);
@@ -354,12 +374,10 @@ void guro_face(std::pair <double, sf::Color> **z_buffer,
     std::vector<index_t> index_vertexes = conf.terrain.get_face_vertexes(face);
     std::pair<int,int> maior_menor = get_maior_menor(index_vertexes,src_points);
     bool out_of_bounds = false;
-    //Point **vetor = criar_vetor(index_vertexes, position, out_of_bounds, tamanho, src_points);
     Point **vetor = new Point*[WINDOW_Y];
     for(int i =0; i< WINDOW_Y; i++)
         vetor[i] = NULL;
     std::vector<double> iluminacao = calc_ilumination(index_vertexes, conf, lp, vrp);
-    //std::cout << iluminacao[0] << std::endl;
 
     for(int i =0; i< index_vertexes.size(); i++)
     {
@@ -433,18 +451,18 @@ void guro_face(std::pair <double, sf::Color> **z_buffer,
             inc = DOWN;
 
         //Seta os valores para o ponto logo abaixo/acima do vertice para sua primeira iteração
-        int y_atual;
+        int y_atual, y_final;
         double x_atual, z_atual;
         sf::Color cor_atual;
         y_atual = y + inc;
+        y_final = (int)round(ponto2.y);
         x_atual = ponto1.x + Tx;
         z_atual = ponto1.z + Tz;
-        cor_atual = txColor + cor1;
 
         int deltaY_int = (int)std::abs(round(deltaY));
 
         //Loop para a variação em y, ou seja, para cada scanline
-        for(int j = 1; j < deltaY_int; j++)
+        for(int j = 1; y_atual*inc < y_final*inc; j++)
         {
             /*Se o y estiver dentro das fronteiras ele atualiza para poder processa-lo
             /alem disso ele faz isso de forma que ele atualize e possa processar o proximo valor
@@ -465,6 +483,8 @@ void guro_face(std::pair <double, sf::Color> **z_buffer,
                 {
                     //std::cout << "Y: " << y_atual << std::endl;
                     //Adiciona um ponto no vetor
+                    //int diff =  y_atual*inc - y*inc;
+                    cor_atual = (txColor * (double)j) + cor1;
                     Point *novo = new Point(index_vertexes[i], x_atual,y_atual,z_atual,cor_atual);
 
                     if(vetor[y_atual] == NULL)
@@ -477,7 +497,7 @@ void guro_face(std::pair <double, sf::Color> **z_buffer,
             y_atual += inc;
             x_atual += Tx;
             z_atual += Tz;
-            cor_atual = txColor + cor_atual;
+            //cor_atual = txColor + cor_atual;
 
         }
 
@@ -781,9 +801,10 @@ void flat_shading_face(std::pair <double, sf::Color> **z_buffer,
             inc = DOWN;
 
         //Seta os valores para o ponto logo abaixo/acima do vertice para sua primeira iteração
-        int y_atual;
+        int y_atual, y_final;
         double x_atual, z_atual;
         y_atual = y + inc;
+        y_final = (int)round(ponto2.y);
         x_atual = ponto1.x + Tx;
         z_atual = ponto1.z + Tz;
 
@@ -791,8 +812,9 @@ void flat_shading_face(std::pair <double, sf::Color> **z_buffer,
 
         int deltaY_int = (int)std::abs(round(deltaY));
 
+
         //Loop para a variação em y, ou seja, para cada scanline
-        for(int j = 1; j < deltaY_int; j++)
+        for(; y_atual*inc < y_final*inc;)
         {
             /*Se o y estiver dentro das fronteiras ele atualiza para poder processa-lo
             /alem disso ele faz isso de forma que ele atualize e possa processar o proximo valor
