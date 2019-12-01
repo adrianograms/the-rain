@@ -505,49 +505,53 @@ int main(){
 
         win.clear();
 
-        // {
-        //     // isso é so pra desenhar a image na tela
-        //     sf::Texture t;
-        //     sf::Sprite  s;
-        //     sf::Image   im;
+        {
+            // isso é so pra desenhar a image na tela
+            sf::Texture t;
+            sf::Sprite  s;
+            sf::Image   im;
+            im.loadFromFile("the_user_can_put_a_plane_as_texture_if_he_wants_to.jpg");
+            t.loadFromImage(im);
 
-        //     lpoint.pos = vec3f(50, 50, -50);
+            conf.texture = im;
 
-        //     std::pair<double, sf::Color> **zbuff;
+            lpoint.pos = vec3f(50, 50, -50);
 
-        //     zbuff = new std::pair<double, sf::Color>*[WIN_X];
+            std::pair<double, sf::Color> **zbuff;
 
-        //     for(uint64_t i = 0; i < WIN_Y; i++){
-        //         zbuff[i] = new std::pair<double, sf::Color>[WIN_X];
-        //     }
+            zbuff = new std::pair<double, sf::Color>*[WIN_Y];
 
-        //     for(uint64_t i = 0; i < WIN_Y; i++){
-        //         for(uint64_t j = 0; j < WIN_X; j++){
-        //             zbuff[i][j].first = std::numeric_limits<double>::max();
-        //             zbuff[i][j].second = sf::Color::Black;
-        //         }
-        //     }
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                zbuff[i] = new std::pair<double, sf::Color>[WIN_X];
+            }
 
-        //     // for(auto f : visible_faces){
-        //     //     flat_shading_face(zbuff, f, conf, lpoint, camera.getvrp());
-        //     // }
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                for(uint64_t j = 0; j < WIN_X; j++){
+                    zbuff[i][j].first = -std::numeric_limits<double>::max();
+                    zbuff[i][j].second = sf::Color::Black;
+                }
+            }
 
-        //     im.create(WIN_X, WIN_Y);
-        //     for(uint64_t i = 0; i < WIN_Y; i++){
-        //         for(uint64_t j = 0; j < WIN_X; j++){
-        //             im.setPixel(j, i, zbuff[i][j].second);
-        //         }
-        //     }
+            for(auto f : conf.terrain.face_vector){
+                flat_shading_face(zbuff, f, conf, lpoint, camera.getvrp(),src_points);
+            }
 
-        //     t.loadFromImage(im);
-        //     s.setTexture(t);
-        //     win.draw(s);
+            im.create(WIN_X, WIN_Y);
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                for(uint64_t j = 0; j < WIN_X; j++){
+                    im.setPixel(j, i, zbuff[i][j].second);
+                }
+            }
 
-        //     for(uint64_t i = 0; i < WIN_Y; i++){
-        //         delete [] zbuff[i];
-        //     }
-        //     delete [] zbuff;
-        // }
+            t.loadFromImage(im);
+            s.setTexture(t);
+            win.draw(s);
+
+            for(uint64_t i = 0; i < WIN_Y; i++){
+                delete [] zbuff[i];
+            }
+            delete [] zbuff;
+        }
 
         // for(index_t i : conf.terrain.edge_vector){
         //      sf::VertexArray lines(sf::Lines, 2);
@@ -567,28 +571,29 @@ int main(){
         //      win.draw(lines);
         // }
 
-        for(auto f : conf.terrain.face_vector){
 
-            sf::VertexArray lines(sf::Triangles, 3);
+        // for(auto f : conf.terrain.face_vector){
 
-            std::vector<index_t> p = conf.terrain.get_face_vertexes(f);
+        //     sf::VertexArray lines(sf::Triangles, 3);
 
-            assert(p.size() == 3);
+        //     std::vector<index_t> p = conf.terrain.get_face_vertexes(f);
 
-            lines[0].position.x = src_points[p[0]].x;
-            lines[0].position.y = src_points[p[0]].y;
-            lines[0].color = palett[(uint64_t)((height[p[0]/conf.mx][p[0]%conf.mx] / 256.0) * palett.size())];
+        //     assert(p.size() == 3);
 
-            lines[1].position.x = src_points[p[1]].x;
-            lines[1].position.y = src_points[p[1]].y;
-            lines[1].color = palett[(uint64_t)((height[p[1]/conf.mx][p[1]%conf.mx] / 256.0) * palett.size())];
+        //     lines[0].position.x = src_points[p[0]].x;
+        //     lines[0].position.y = src_points[p[0]].y;
+        //     lines[0].color = palett[(uint64_t)((height[p[0]/conf.mx][p[0]%conf.mx] / 256.0) * palett.size())];
 
-            lines[2].position.x = src_points[p[2]].x;
-            lines[2].position.y = src_points[p[2]].y;
-            lines[2].color = palett[(uint64_t)((height[p[2]/conf.mx][p[2]%conf.mx] / 256.0) * palett.size())];
+        //     lines[1].position.x = src_points[p[1]].x;
+        //     lines[1].position.y = src_points[p[1]].y;
+        //     lines[1].color = palett[(uint64_t)((height[p[1]/conf.mx][p[1]%conf.mx] / 256.0) * palett.size())];
 
-            win.draw(lines);
-        }
+        //     lines[2].position.x = src_points[p[2]].x;
+        //     lines[2].position.y = src_points[p[2]].y;
+        //     lines[2].color = palett[(uint64_t)((height[p[2]/conf.mx][p[2]%conf.mx] / 256.0) * palett.size())];
+
+        //     win.draw(lines);
+        // }
 
       if(conf.texture_set){
             sf::Texture t;
