@@ -734,6 +734,7 @@ float Pipeline::FOCAL_bhaskaraX( float a, float b, float c )
 }
 
 vec3f Pipeline::getn(){
+    auto n = VRP - FOCAL;
     return vec3f(n.x, n.y, n.z);
 }
 
@@ -747,9 +748,9 @@ std::vector<index_t> filter_normal(const half_mesh &terrain, vec3f n){
     std::vector<index_t> ret;
 
     // n . N > 0
-    for(index_t i = 0; i < (index_t)terrain.face_vector.size(); i++){
-        if(n.dot(terrain.get_face_normal(i)) > 0){
-            ret.push_back(i);
+    for(auto f : terrain.face_vector){
+        if(n.dot(terrain.get_face_normal(f)) > 0.0){
+            ret.push_back(f);
         }
     }
     return ret;

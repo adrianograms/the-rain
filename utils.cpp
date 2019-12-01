@@ -2,7 +2,7 @@
 
 config::config(): mx(100),
                   my(100),
-                  hmax(0.2),
+                  hmax(0.3),
                   vmode(WIREFRAME),
                   file_name(""),
                   file_name_texture(""),

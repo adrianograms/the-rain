@@ -25,6 +25,7 @@ void half_mesh::_gen_objects(std::vector<half::triangle> &triangles, std::vector
             // | / |
             // |/  |
             // 2---4
+
             triangles.emplace_back(p1, p2, p3);
             triangles.emplace_back(p3, p2, p4);
 
@@ -57,7 +58,7 @@ void half_mesh::_update_normals(){
         vec3f BA = A - B;
         vec3f BC = C - B;
 
-        normals.emplace_back(BC.cross(BA).norm());
+        normals.emplace_back(BA.cross(BC).norm());
     }
 }
 // ---------- public ----------
@@ -179,7 +180,6 @@ void half_mesh::build_mesh(uint64_t mx, uint64_t my, std::function<vec3f(index_t
         else if(face.v[2] == curr){
             next = face.v[0];
         }
-        assert(next != -1);
 
         hedge.next = edge_index_map[{curr, next}];
     }
@@ -293,18 +293,16 @@ std::vector<index_t> half_mesh::get_vertex_faces(index_t i) const {
 std::vector<index_t> half_mesh::get_face_vertexes(index_t i) const {
     std::vector<index_t> ret;
 
-    index_t curr_he = i;
-    index_t start_vert, curr_vert;
-
-    start_vert = curr_vert = half_vector[curr_he].vertex;
+    index_t start_he = i;
+    index_t curr_he  = i;
 
     do{
-        ret.push_back(curr_vert);
+        const auto &he = half_vector[curr_he];
+        ret.push_back(he.vertex);
 
-        curr_he = half_vector[curr_he].next;
-        curr_vert = half_vector[curr_he].vertex;
+        curr_he = he.next;
 
-    }while(start_vert != curr_vert);
+    }while(start_he != curr_he);
 
     return ret;
 }

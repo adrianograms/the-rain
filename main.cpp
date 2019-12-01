@@ -38,8 +38,14 @@ int main(){
     Pipeline  camera;
     sf::Event event;
 
-    camera.setMatrixJP(-100.0, 100.0, -100.0, 100.0, 0, WIN_X, 0, WIN_Y);
-    camera.setMatrixSRC({0, 25, 25}, {50, 0, 50});
+    // camera.setMatrixJP(-100.0, 100.0, -100.0, 100.0, 0, WIN_X, 0, WIN_Y);
+    // camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
+
+    camera.setMatrixJP(-4.0, 4.0, -4.0, 4.0, 0, WIN_X, 0, WIN_Y);
+    camera.setMatrixSRC({0, 2, 2}, {2, 0, 2});
+
+    camera.setMatrixJP(-50.0, 50.0, -50.0, 50.0, 0, WIN_X, 0, WIN_Y);
+    camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
 
     auto zmap = [&height, &conf](index_t index) -> vec3f {
         uint64_t i = index / conf.mx;
@@ -494,7 +500,7 @@ int main(){
             }
         }
 
-        auto visible_faces = filter_normal(conf.terrain, camera.getn());
+        // auto visible_faces = filter_normal(conf.terrain, camera.getn());
         auto src_points = apply_pipeline(camera.getMatrix(), conf.terrain.points);
 
         win.clear();
@@ -543,22 +549,45 @@ int main(){
         //     delete [] zbuff;
         // }
 
-        for(index_t i : conf.terrain.edge_vector){
-             sf::VertexArray lines(sf::Lines, 2);
-             std::pair<index_t, index_t> dir = conf.terrain.half_direction(i);
+        // for(index_t i : conf.terrain.edge_vector){
+        //      sf::VertexArray lines(sf::Lines, 2);
+        //      std::pair<index_t, index_t> dir = conf.terrain.half_direction(i);
 
-             auto srt = src_points[dir.first];
-             auto end = src_points[dir.second];
+        //      auto srt = src_points[dir.first];
+        //      auto end = src_points[dir.second];
 
-             lines[0].position.x = srt.x;
-             lines[0].position.y = srt.y;
-             lines[0].color = sf::Color::Green;
+        //      lines[0].position.x = srt.x;
+        //      lines[0].position.y = srt.y;
+        //      lines[0].color = sf::Color::Green;
 
-             lines[1].position.x = end.x;
-             lines[1].position.y = end.y;
-             lines[1].color = sf::Color::Blue;
+        //      lines[1].position.x = end.x;
+        //      lines[1].position.y = end.y;
+        //      lines[1].color = sf::Color::Blue;
 
-             win.draw(lines);
+        //      win.draw(lines);
+        // }
+
+        for(auto f : conf.terrain.face_vector){
+
+            sf::VertexArray lines(sf::Triangles, 3);
+
+            std::vector<index_t> p = conf.terrain.get_face_vertexes(f);
+
+            assert(p.size() == 3);
+
+            lines[0].position.x = src_points[p[0]].x;
+            lines[0].position.y = src_points[p[0]].y;
+            lines[0].color = palett[(uint64_t)((height[p[0]/conf.mx][p[0]%conf.mx] / 256.0) * palett.size())];
+
+            lines[1].position.x = src_points[p[1]].x;
+            lines[1].position.y = src_points[p[1]].y;
+            lines[1].color = palett[(uint64_t)((height[p[1]/conf.mx][p[1]%conf.mx] / 256.0) * palett.size())];
+
+            lines[2].position.x = src_points[p[2]].x;
+            lines[2].position.y = src_points[p[2]].y;
+            lines[2].color = palett[(uint64_t)((height[p[2]/conf.mx][p[2]%conf.mx] / 256.0) * palett.size())];
+
+            win.draw(lines);
         }
 
       if(conf.texture_set){
