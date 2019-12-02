@@ -760,13 +760,14 @@ std::vector<vec3f> apply_pipeline(float **mat, std::vector<vec3f> &sru_points){
     std::vector<vec3f> ret;
 
     for(const auto &p : sru_points){
-        float x, y, z;
+        float x, y, z, d;
 
         x = mat[0][0] * p.x + mat[0][1] * p.y + mat[0][2] * p.z + mat[0][3] * 1;
         y = mat[1][0] * p.x + mat[1][1] * p.y + mat[1][2] * p.z + mat[1][3] * 1;
         z = mat[2][0] * p.x + mat[2][1] * p.y + mat[2][2] * p.z + mat[2][3] * 1;
+        d = mat[3][0] * p.x + mat[3][1] * p.y + mat[3][2] * p.z + mat[3][3] * 1;
 
-        ret.push_back(vec3f(x, y, z));
+        ret.push_back(vec3f(x / d, y / d, z));
     }
 
     return ret;

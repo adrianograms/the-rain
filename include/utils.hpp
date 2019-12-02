@@ -10,6 +10,7 @@
 #include "half_types.hpp"
 #include "button.hpp"
 #include "overlay.hpp"
+#include "noise.hpp"
 
 struct config{
     uint64_t mx;
@@ -49,8 +50,8 @@ struct config{
 };
 
 namespace utils {
-    void save_mesh(config &conf);
-    void load_mesh(config &conf);
+    void save_mesh(config &, noise &);
+    void load_mesh(config &, noise &);
 
     void load_texture(config &conf);
 }

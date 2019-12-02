@@ -46,10 +46,9 @@ class half_mesh{
     // | /       |
     // |/        |
     // 3---------4
-
+public:
     std::vector<half_edge> half_vector;
 
-public:
     std::vector<index_t> vertex_vector;
     std::vector<index_t> face_vector;
     std::vector<index_t> edge_vector;
@@ -57,7 +56,6 @@ public:
     std::map<std::pair<index_t, index_t>, index_t> edge_index_map;
 
     std::vector<vec3f> points;
-    std::vector<vec3f> normals;
 
     half_mesh();
 

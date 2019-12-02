@@ -94,7 +94,7 @@ struct light{
     double KD;
     double KS;
 
-    light(): x("0"), y("0"), z("0"), LA(80), KA(0.277), KD(0.467), KS(0.369), LPOINT(155), N(1.63) {}
+    light(): x("0"), y("0"), z("0"), N(1.63), LPOINT(155), LA(80), KA(0.277), KD(0.467), KS(0.369){ }
 
     void parse(){
         float x = std::stof(this->x);
@@ -149,26 +149,28 @@ std::pair<int, int> get_maior_menor(const std::vector<index_t> &indexes,
         maior_menor.first = WINDOW_Y - 1;
     if(maior_menor.second < 0)
         maior_menor.second = 0;
-    return maior_menor;   
+    return maior_menor;
 }
 
 //Pega a cor do vertex
 sf::Color getColor(index_t vertex, const config &conf){
-    return conf.texture.getPixel(vertex / conf.mx, vertex % conf.mx);
+    auto v = conf.texture.getSize();
+    return conf.texture.getPixel((vertex % conf.mx) % v.x,
+                                 (vertex / conf.mx) % v.y);
     //return sf::Color::White;
 }
 
 void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fim);
 
-Point **criar_vetor(std::vector<index_t> &pontos, 
-                    index_t &index, 
-                    bool &out_of_bounds, 
+Point **criar_vetor(std::vector<index_t> &pontos,
+                    index_t &index,
+                    bool &out_of_bounds,
                     int &tam,
                     std::vector<vec3f> const &src_points) {
     int maior, menor;
     maior = menor = src_points[pontos[0]].y;
     // Descobre o maior entre os vertices
-    for(int i =1; i< pontos.size(); i++)
+    for(int64_t i = 1; i < (int64_t)pontos.size(); i++)
     {
         if(round(src_points[pontos[i]].y) > maior)
             maior = round(src_points[pontos[i]].y);
@@ -230,11 +232,11 @@ std::vector<double> calc_ilumination(std::vector<index_t> &pontos,
     double Iambiente = lp.LA * lp.KA;
     std::vector<double> result;
 
-    for(int i = 0; i < pontos.size(); i++)
+    for(int64_t i = 0; i < (int64_t)pontos.size(); i++)
     {
         std::vector<index_t> faces = conf.terrain.get_vertex_faces(pontos[i]);
         vec3f normal(0.0,0.0,0.0);
-        for(int j =0; j< faces.size(); j++)
+        for(int64_t j = 0; j < (int64_t)faces.size(); j++)
         {
             //std::cout <<  faces[j] << std::endl;
             normal += conf.terrain.get_face_normal(faces[j]);
@@ -315,7 +317,7 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
         {
             delete inicio;
             delete fim;
-            return;        
+            return;
         }
         if(x_inicial < 0)
         {
@@ -338,7 +340,6 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
         // Se o fim do vetor estiver fora ele "recorta"
         if(x_final >= WINDOW_X)
         {
-            double deslocamento = fim->x - (WINDOW_X-1);
             x_final = WINDOW_X - 1;
             //fim->z = fim->z - Tz*deslocamento;
             //fim->color =  (txColor * (-deslocamento)) + fim->color ;
@@ -359,7 +360,7 @@ void scanline(std::pair <double, sf::Color> **z_buffer, Point *inicio, Point *fi
             if(z_buffer[y][i].first < z_atual)
             {
                 z_buffer[y][i].first = z_atual;
-                int diff = (i - x_inicial); 
+                int diff = (i - x_inicial);
                 z_buffer[y][i].second = (txColor * diff) + color;
             }
             // Incrementa os valores para continuar andando pela scanline
@@ -390,7 +391,7 @@ void guro_face(std::pair <double, sf::Color> **z_buffer,
 
     std::vector<double> iluminacao = calc_ilumination(index_vertexes, conf, lp, vrp);
 
-    for(int i =0; i< index_vertexes.size(); i++)
+    for(int64_t i =0; i < (int64_t)index_vertexes.size(); i++)
     {
         vec3f ponto1 = src_points[index_vertexes[i]];
         vec3f ponto2;
@@ -399,7 +400,7 @@ void guro_face(std::pair <double, sf::Color> **z_buffer,
 
         sf::Color cor1, cor2;
         // Se o vertice for o ultimo ele volta para o primeiro
-        if(i == index_vertexes.size() - 1)
+        if(i == (int64_t)index_vertexes.size() - 1)
         {
             ponto2 = src_points[index_vertexes[0]];
             cor1 = getColor(index_vertexes[i], conf);
@@ -561,7 +562,7 @@ double calc_ilumination_flat(std::vector<index_t> &indexes,
     x_bigger = x_smaller = conf.terrain.points[indexes[0]].x;
     y_bigger = y_smaller = conf.terrain.points[indexes[0]].y;
     z_bigger = z_smaller = conf.terrain.points[indexes[0]].z;
-    for(int i = 1; i < indexes.size(); i++)
+    for(int64_t i = 1; i < (int64_t)indexes.size(); i++)
     {
         //Maior e menor x
         if(x_bigger < conf.terrain.points[indexes[i]].x)
@@ -633,7 +634,7 @@ double calc_ilumination_flat(std::vector<index_t> &indexes,
             return Iltotal;
         else
             return 0;
-        
+
     }
     return IlAmbiente;
     // FIXME: nao retorna nada se product for <= 0
@@ -703,7 +704,6 @@ void scanline_flat(std::pair <double, sf::Color> **z_buffer, Point *inicio, Poin
         // Se o fim do vetor estiver fora ele "recorta"
         if(x_final >= WINDOW_X)
         {
-            double deslocamento = fim->x - (WINDOW_X-1);
             x_final = WINDOW_X - 1;
             //fim->z = fim->z - Tz*deslocamento;
         }
@@ -760,14 +760,14 @@ void flat_shading_face(std::pair <double, sf::Color> **z_buffer,
     cor = avg_color(cor1, cor2, cor3);
     apply_light(cor, light);
 
-    for(int i =0; i< index_vertexes.size(); i++)
+    for(int64_t i = 0; i < (int64_t)index_vertexes.size(); i++)
     {
         vec3f ponto1 = src_points[index_vertexes[i]];
         vec3f ponto2;
 
         int inc;
         // Se o vertice for o ultimo ele volta para o primeiro
-        if(i == index_vertexes.size() - 1)
+        if(i == (int64_t)index_vertexes.size() - 1)
         {
             ponto2 = src_points[index_vertexes[0]];
         }
@@ -815,8 +815,8 @@ void flat_shading_face(std::pair <double, sf::Color> **z_buffer,
             else
             {
                 delete vetor[y]->next;
-                vetor[y]->next = novo; 
-            }      
+                vetor[y]->next = novo;
+            }
         }
 
 
@@ -835,9 +835,6 @@ void flat_shading_face(std::pair <double, sf::Color> **z_buffer,
         z_atual = ponto1.z + Tz;
 
         //std::cout << "Posicao: " << position<< std::endl;
-
-        int deltaY_int = (int)std::abs(round(deltaY));
-
 
         //Loop para a variação em y, ou seja, para cada scanline
         for(; y_atual*inc < y_final*inc;)
@@ -872,7 +869,7 @@ void flat_shading_face(std::pair <double, sf::Color> **z_buffer,
                         delete vetor[y_atual]->next;
                         vetor[y_atual]->next = novo;
                     }
-                    
+
                     //Só atualiza quando ele consegue se mover dentro pelo vetor
                     //std::cout << "Ponto X: " << vetor[y_atual]->x << std::endl;
                 }
@@ -927,10 +924,12 @@ void scanline_wire(std::pair <double, sf::Color> **z_buffer, Point *inicio, Poin
 
                 z_buffer[y][x_inicial].second = inicio->color;
             }
+
         }
+        delete inicio;
     }
     else
-    {
+        {
 
         x_final = (int)round(fim->x);
 
@@ -944,16 +943,22 @@ void scanline_wire(std::pair <double, sf::Color> **z_buffer, Point *inicio, Poin
         if(deltaX != 0)
         {
             //Calcula taxa
-            Tz = deltaZ/abs(deltaX);
+            Tz = deltaZ/std::abs(deltaX);
         }
         //Corta a scanline caso ela passe da janela
-        if(x_inicial >= WINDOW_X)
+        if(x_inicial >= WINDOW_X){
+            delete inicio;
+            delete fim;
             return;
+        }
         if(x_inicial < 0)
         {
             //Se os dois estão fora tanto o inicio quanto o fim da scanline não faz nada
-            if(x_final < 0)
+            if(x_final < 0){
+                delete inicio;
+                delete fim;
                 return;
+            }
             else
             {
                 double deslocamento = (- inicio->x);
@@ -1012,8 +1017,6 @@ void scanline_wire(std::pair <double, sf::Color> **z_buffer, Point *inicio, Poin
 void wire_frame_face(std::pair <double, sf::Color> **z_buffer,
                      index_t face,
                      const config &conf,
-                     const light  &lp,
-                     const vec3f  &vrp,
                      const std::vector<vec3f> &src_points)
 {
     std::vector<index_t> index_vertexes = conf.terrain.get_face_vertexes(face);
@@ -1024,14 +1027,14 @@ void wire_frame_face(std::pair <double, sf::Color> **z_buffer,
     for(int i =0; i< WINDOW_Y; i++)
         vetor[i] = NULL;
 
-    for(int i =0; i< index_vertexes.size(); i++)
+    for(int64_t i = 0; i < (int64_t)index_vertexes.size(); i++)
     {
         vec3f ponto1 = src_points[index_vertexes[i]];
         vec3f ponto2;
 
         int inc;
         // Se o vertice for o ultimo ele volta para o primeiro
-        if(i == index_vertexes.size() - 1)
+        if(i == (int64_t)index_vertexes.size() - 1)
         {
             ponto2 = src_points[index_vertexes[0]];
         }
@@ -1090,8 +1093,6 @@ void wire_frame_face(std::pair <double, sf::Color> **z_buffer,
         y_atual = y + inc;
         x_atual = ponto1.x + Tx;
         z_atual = ponto1.z + Tz;
-
-        int deltaY_int = (int)std::abs(round(deltaY));
 
         //Loop para a variação em y, ou seja, para cada scanline
         for(; y_atual*inc < y_final*inc;)

@@ -27,7 +27,7 @@ const std::vector<sf::Color> palett = {{ 30,   0, 255},
                                        {232,  54,  12},
                                        {255,   0,  29}};
 
-sf::RenderWindow win(sf::VideoMode(WIN_X, WIN_Y), "8===========D~~~", sf::Style::Close | sf::Style::Titlebar);
+sf::RenderWindow win(sf::VideoMode(WIN_X, WIN_Y), "The-rain", sf::Style::Close | sf::Style::Titlebar);
 
 int main(){
     win.setVerticalSyncEnabled(true);
@@ -38,14 +38,8 @@ int main(){
     Pipeline  camera;
     sf::Event event;
 
-    // camera.setMatrixJP(-100.0, 100.0, -100.0, 100.0, 0, WIN_X, 0, WIN_Y);
-    // camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
-
-    camera.setMatrixJP(-10.0, 10.0, -10.0, 10.0, 0, WIN_X, 0, WIN_Y);
-    camera.setMatrixSRC({0, 20, 2}, {20, 0, 20});
-
-    // camera.setMatrixJP(-50.0, 50.0, -50.0, 50.0, 0, WIN_X, 0, WIN_Y);
-    // camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
+    camera.setMatrixJP(-50.0, 50.0, -50.0, 50.0, 0, WIN_X, 0, WIN_Y);
+    camera.setMatrixSRC({0, 50, 50}, {50, 0, 50});
 
     auto zmap = [&height, &conf](index_t index) -> vec3f {
         uint64_t i = index / conf.mx;
@@ -94,7 +88,6 @@ int main(){
         win.draw(s);
     };
 
-    conf.load_font("assets/OpenSans-Regular.ttf");
 
     auto read_input = [&draw_ui](std::string &to) {
         to = "";
@@ -150,7 +143,7 @@ int main(){
                         if(a == 8 && to.size() != 0){
                             to.pop_back();
                         }
-                        else if(a == 46 || (a >= 48 && a <= 57)){
+                        else if(a == 46 || (a >= 48 && a <= 57) || a == 45){
                             to += a;
                         }
 
@@ -169,8 +162,13 @@ int main(){
     // ---------------
     // save button
     conf.add_button("assets/button_save.png", {20, 20},
-                    [&read_input, &conf](){
+                    [&read_input, &conf, &height](){
                         read_input(conf.file_name);
+                        utils::save_mesh(conf, height);
+                        if(!conf.file_set){
+                            conf.message_log = "Fail to load file: " + conf.file_name;
+                            conf.file_name = "";
+                        }
                     });
     // load texture button
     conf.add_button("assets/button_texture.png", {20, 60},
@@ -184,12 +182,12 @@ int main(){
                     });
     // load button
     conf.add_button("assets/button_load.png", {20, 100},
-                    [&read_input, &conf](){
+                    [&read_input, &conf, &height](){
                         read_input(conf.file_name);
-                        utils::load_mesh(conf);
+                        utils::load_mesh(conf, height);
                         if(!conf.file_set){
                             conf.message_log = "Fail to load file: " + conf.file_name;
-                            conf.file_name_texture = "";
+                            conf.file_name = "";
                         }
                     });
     // wireframe mode
@@ -320,7 +318,6 @@ int main(){
     // --------
     // overlays
     // --------
-
     conf.add_overlay({WIN_X - 1035, WIN_Y - 110},
                      []() -> std::string {
                          return "Light and material:";
@@ -418,9 +415,9 @@ int main(){
     // spaghetti end
     // -------------
     conf.terrain.build_mesh(conf.mx, conf.my, zmap);
+    conf.load_font("assets/OpenSans-Regular.ttf");
 
     while(win.isOpen()){
-
         while(win.pollEvent(event)){
             switch(event.type){
             case sf::Event::Closed:
@@ -506,20 +503,20 @@ int main(){
         win.clear();
 
         {
-             // isso é so pra desenhar a image na tela
             sf::Texture t;
             sf::Sprite  s;
             sf::Image  im;
 
-            conf.texture.create(conf.mx, conf.my);
-             for(uint64_t i = 0; i < conf.my; i++){
-                 for(uint64_t j = 0; j < conf.mx; j++){
-                     auto c = palett[(uint64_t)((height[i][j] / 256.0) * palett.size())];
-                     conf.texture.setPixel(j, i, c);
-                 }
-             }
+            if(!conf.texture_set){
+                conf.texture.create(conf.mx, conf.my);
+                for(uint64_t i = 0; i < conf.my; i++){
+                    for(uint64_t j = 0; j < conf.mx; j++){
+                        auto c = palett[(uint64_t)((height[i][j] / 256.0) * palett.size())];
+                        conf.texture.setPixel(j, i, c);
+                    }
+                }
+            }
 
-            lpoint.pos = vec3f(50, 50, -50);
 
             std::pair<double, sf::Color> **zbuff;
 
@@ -536,8 +533,20 @@ int main(){
                 }
             }
 
-            for(auto f : visible_faces){
-                flat_shading_face(zbuff, f, conf, lpoint, camera.getvrp(),src_points);
+            if(conf.vmode == FLAT){
+                for(auto f : visible_faces){
+                    flat_shading_face(zbuff, f, conf, lpoint, camera.getvrp(),src_points);
+                }
+            }
+            else if(conf.vmode == WIREFRAME){
+                for(auto f : visible_faces){
+                    wire_frame_face(zbuff, f, conf, src_points);
+                }
+            }
+            else{
+                for(auto f : visible_faces){
+                    guro_face(zbuff, f, conf, lpoint, camera.getvrp(),src_points);
+                }
             }
 
             im.create(WIN_X, WIN_Y);
@@ -598,17 +607,6 @@ int main(){
 
         //     win.draw(lines);
         // }
-
-      if(conf.texture_set){
-            sf::Texture t;
-            sf::Sprite  s;
-
-            t.loadFromImage(conf.texture);
-            s.setTexture(t);
-
-            s.setPosition({500, 500});
-            win.draw(s);
-        }
 
         draw_height_map();
         draw_ui();
