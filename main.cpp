@@ -566,29 +566,6 @@ int main(){
             delete [] zbuff;
         }
 
-        for(auto f : visible_faces){
-
-            sf::VertexArray lines(sf::Triangles, 3);
-
-            std::vector<index_t> p = conf.terrain.get_face_vertexes(f);
-
-            assert(p.size() == 3);
-
-            lines[0].position.x = src_points[p[0]].x;
-            lines[0].position.y = src_points[p[0]].y;
-            lines[0].color = palett[(uint64_t)((height[p[0]/conf.mx][p[0]%conf.mx] / 256.0) * palett.size())];
-
-            lines[1].position.x = src_points[p[1]].x;
-            lines[1].position.y = src_points[p[1]].y;
-            lines[1].color = palett[(uint64_t)((height[p[1]/conf.mx][p[1]%conf.mx] / 256.0) * palett.size())];
-
-            lines[2].position.x = src_points[p[2]].x;
-            lines[2].position.y = src_points[p[2]].y;
-            lines[2].color = palett[(uint64_t)((height[p[2]/conf.mx][p[2]%conf.mx] / 256.0) * palett.size())];
-
-            win.draw(lines);
-        }
-
         draw_height_map();
         draw_ui();
     }
