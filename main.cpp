@@ -566,47 +566,28 @@ int main(){
             delete [] zbuff;
         }
 
-        // for(index_t i : conf.terrain.edge_vector){
-        //      sf::VertexArray lines(sf::Lines, 2);
-        //      std::pair<index_t, index_t> dir = conf.terrain.half_direction(i);
+        for(auto f : visible_faces){
 
-        //      auto srt = src_points[dir.first];
-        //      auto end = src_points[dir.second];
+            sf::VertexArray lines(sf::Triangles, 3);
 
-        //      lines[0].position.x = srt.x;
-        //      lines[0].position.y = srt.y;
-        //      lines[0].color = sf::Color::Green;
+            std::vector<index_t> p = conf.terrain.get_face_vertexes(f);
 
-        //      lines[1].position.x = end.x;
-        //      lines[1].position.y = end.y;
-        //      lines[1].color = sf::Color::Blue;
+            assert(p.size() == 3);
 
-        //      win.draw(lines);
-        // }
+            lines[0].position.x = src_points[p[0]].x;
+            lines[0].position.y = src_points[p[0]].y;
+            lines[0].color = palett[(uint64_t)((height[p[0]/conf.mx][p[0]%conf.mx] / 256.0) * palett.size())];
 
+            lines[1].position.x = src_points[p[1]].x;
+            lines[1].position.y = src_points[p[1]].y;
+            lines[1].color = palett[(uint64_t)((height[p[1]/conf.mx][p[1]%conf.mx] / 256.0) * palett.size())];
 
-        // for(auto f : visible_faces){
+            lines[2].position.x = src_points[p[2]].x;
+            lines[2].position.y = src_points[p[2]].y;
+            lines[2].color = palett[(uint64_t)((height[p[2]/conf.mx][p[2]%conf.mx] / 256.0) * palett.size())];
 
-        //     sf::VertexArray lines(sf::Triangles, 3);
-
-        //     std::vector<index_t> p = conf.terrain.get_face_vertexes(f);
-
-        //     assert(p.size() == 3);
-
-        //     lines[0].position.x = src_points[p[0]].x;
-        //     lines[0].position.y = src_points[p[0]].y;
-        //     lines[0].color = palett[(uint64_t)((height[p[0]/conf.mx][p[0]%conf.mx] / 256.0) * palett.size())];
-
-        //     lines[1].position.x = src_points[p[1]].x;
-        //     lines[1].position.y = src_points[p[1]].y;
-        //     lines[1].color = palett[(uint64_t)((height[p[1]/conf.mx][p[1]%conf.mx] / 256.0) * palett.size())];
-
-        //     lines[2].position.x = src_points[p[2]].x;
-        //     lines[2].position.y = src_points[p[2]].y;
-        //     lines[2].color = palett[(uint64_t)((height[p[2]/conf.mx][p[2]%conf.mx] / 256.0) * palett.size())];
-
-        //     win.draw(lines);
-        // }
+            win.draw(lines);
+        }
 
         draw_height_map();
         draw_ui();

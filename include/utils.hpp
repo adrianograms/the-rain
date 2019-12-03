@@ -6,6 +6,9 @@
 #include <functional>
 #include <SFML/Graphics.hpp>
 
+#include <fstream>
+#include <iterator>
+
 #include "half_mesh.hpp"
 #include "half_types.hpp"
 #include "button.hpp"

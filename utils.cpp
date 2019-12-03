@@ -1,7 +1,7 @@
 #include "include/utils.hpp"
 
-config::config(): mx(100),
-                  my(100),
+config::config(): mx(50),
+                  my(50),
                   hmax(0.3),
                   vmode(WIREFRAME),
                   file_name(""),
@@ -49,26 +49,37 @@ void utils::save_mesh(config &conf, noise &heigth){
         return;
     }
 
-    std::size_t size = conf.terrain.half_vector.size();
-    std::fwrite(&size, sizeof(size), 1, f);
+    uint64_t size = conf.terrain.half_vector.size();
+    std::cout << "half_vec: " << size << std::endl;
+    std::fwrite(&size, sizeof(uint64_t), 1, f);
     std::fwrite(conf.terrain.half_vector.data(), sizeof(half_edge), size, f);
 
     size = conf.terrain.vertex_vector.size();
-    std::fwrite(&size, sizeof(size), 1, f);
+    std::cout << "vertex_vec: " << size << std::endl;
+    std::fwrite(&size, sizeof(uint64_t), 1, f);
     std::fwrite(conf.terrain.vertex_vector.data(), sizeof(index_t), size, f);
 
     size = conf.terrain.face_vector.size();
-    std::fwrite(&size, sizeof(size), 1, f);
+    std::cout << "face_vec: " << size << std::endl;
+    std::fwrite(&size, sizeof(uint64_t), 1, f);
     std::fwrite(conf.terrain.face_vector.data(), sizeof(index_t), size, f);
 
     size = conf.terrain.edge_vector.size();
-    std::fwrite(&size, sizeof(size), 1, f);
+    std::cout << "edge_vec: " << size << std::endl;
+    std::fwrite(&size, sizeof(uint64_t), 1, f);
     std::fwrite(conf.terrain.edge_vector.data(), sizeof(index_t), size, f);
 
-    // TODO: write the points as vec3f;
+    size = conf.terrain.points.size();
+    std::cout << "points: " << size << std::endl;
+    std::fwrite(&size, sizeof(uint64_t), 1, f);
+    std::fwrite(conf.terrain.points.data(), sizeof(vec3f), size, f);
+    for(auto &a:conf.terrain.points){
+        std::cout << "x,y,z:" << a.x << ", " << a.y << ", " << a.z << std::endl;
+    }
 
     size = conf.terrain.edge_index_map.size();
-    std::fwrite(&size, sizeof(size), 1, f);
+    std::cout << "edge map: " << size << std::endl;
+    std::fwrite(&size, sizeof(uint64_t), 1, f);
     for(auto &t : conf.terrain.edge_index_map){
         index_t i;
         index_t j;
@@ -77,13 +88,17 @@ void utils::save_mesh(config &conf, noise &heigth){
         i = t.first.first;
         j = t.first.second;
         k = t.second;
+
+        std::fwrite(&i, sizeof(index_t), 1, f);
+        std::fwrite(&j, sizeof(index_t), 1, f);
+        std::fwrite(&k, sizeof(index_t), 1, f);
     }
 
-    auto mapx = conf.my;
-    auto mapy = conf.mx;
+    uint64_t mapx = conf.my;
+    uint64_t mapy = conf.mx;
 
-    std::fwrite(&mapx, sizeof(mapx), 1, f);
-    std::fwrite(&mapy, sizeof(mapy), 1, f);
+    std::fwrite(&mapx, sizeof(uint64_t), 1, f);
+    std::fwrite(&mapy, sizeof(uint64_t), 1, f);
 
     for(uint64_t i = 0; i < conf.my; i++){
         for(uint64_t j = 0; j < conf.mx; j++){
@@ -91,7 +106,6 @@ void utils::save_mesh(config &conf, noise &heigth){
             std::fwrite(&n, sizeof(uint8_t), 1, f);
         }
     }
-
 
     std::fclose(f);
     conf.file_set = true;
@@ -105,26 +119,35 @@ void utils::load_mesh(config &conf, noise &height){
     }
     conf.terrain.clear_mesh();
 
-    std::size_t size;
-    std::fread(&size, sizeof(std::size_t), 1, f);
+    uint64_t size;
+
+    std::fread(&size, sizeof(uint64_t), 1, f);
+    std::cout << "half_vec: " << size << std::endl;
     conf.terrain.half_vector.reserve(size);
     std::fread(conf.terrain.half_vector.data(), sizeof(half_edge), size, f);
 
-    std::fread(&size, sizeof(std::size_t), 1, f);
+    std::fread(&size, sizeof(uint64_t), 1, f);
+    std::cout << "vertex_vec: " << size << std::endl;
     conf.terrain.vertex_vector.reserve(size);
     std::fread(conf.terrain.vertex_vector.data(), sizeof(index_t), size, f);
 
-    std::fread(&size, sizeof(std::size_t), 1, f);
+    std::fread(&size, sizeof(uint64_t), 1, f);
+    std::cout << "face_vec: " << size << std::endl;
     conf.terrain.face_vector.reserve(size);
     std::fread(conf.terrain.face_vector.data(), sizeof(index_t), size, f);
 
-    std::fread(&size, sizeof(std::size_t), 1, f);
+    std::fread(&size, sizeof(uint64_t), 1, f);
+    std::cout << "edge_vec: " << size << std::endl;
     conf.terrain.edge_vector.reserve(size);
     std::fread(conf.terrain.edge_vector.data(), sizeof(index_t), size, f);
 
-    // TODO: read the points as vec3f;
+    std::fread(&size, sizeof(uint64_t), 1, f);
+    std::cout << "points: " << size << std::endl;
+    conf.terrain.points.reserve(size);
+    std::fread(conf.terrain.points.data(), sizeof(vec3f), size, f);
 
-    std::fread(&size, sizeof(std::size_t), 1, f);
+    std::fread(&size, sizeof(uint64_t), 1, f);
+    std::cout << "edge_vec: " << size << std::endl;
     for(uint64_t o = 0; o < size; o++){
         index_t i;
         index_t j;
@@ -140,10 +163,18 @@ void utils::load_mesh(config &conf, noise &height){
     uint64_t mapx;
     uint64_t mapy;
 
-    std::fread(&mapx, sizeof(mapx), 1, f);
-    std::fread(&mapy, sizeof(mapy), 1, f);
+    std::fread(&mapx, sizeof(uint64_t), 1, f);
+    std::fread(&mapy, sizeof(uint64_t), 1, f);
+    std::cout << "new mapx: " << mapx << "new mapy: " << mapy << std::endl;
 
-    // height.load();
+    height.update(mapy, mapx);
+    for(uint64_t i = 0; i < mapx; i++){
+        for(uint64_t j = 0; j < mapy; j++){
+            uint8_t in;
+            std::fread(&in, sizeof(uint8_t), 1, f);
+            height[i][j] = in;
+        }
+    }
 
     conf.mx = mapx;
     conf.my = mapy;

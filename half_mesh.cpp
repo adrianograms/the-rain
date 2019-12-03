@@ -195,6 +195,7 @@ void half_mesh::clear_mesh(){
     this->face_vector.clear();
     this->edge_vector.clear();
     this->edge_index_map.clear();
+    this->points.clear();
 }
 
 
